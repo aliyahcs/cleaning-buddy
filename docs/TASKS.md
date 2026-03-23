@@ -4,306 +4,218 @@
 
 ### Task 1: User Registration System
 **User Stories:** 1
-**Description:** Implement user account creation with email verification and profile setup.
+**Description:** Implement user account creation so users can save their cleaning preferences and history.
 
 **Acceptance Criteria:**
-- Users can register with email and password
-- Email verification is sent and required for activation
-- Password strength validation (min 8 characters, 1 uppercase, 1 number, 1 special)
-- User profile created with default settings
-- Error handling for duplicate emails and invalid inputs
-- Responsive design works on mobile and desktop
+- Users can create an account with email and password
+- User profile is created upon registration
+- Error handling for duplicate accounts
 
 ### Task 2: User Login System
 **User Stories:** 2
-**Description:** Create secure login functionality with session management.
+**Description:** Create login functionality so users can access their saved cleaning schedules and settings.
 
 **Acceptance Criteria:**
-- Users can log in with email/password
-- Remember me functionality (30 days)
-- Session management with JWT tokens
-- Automatic logout on token expiration
-- Error handling for invalid credentials
-- Mobile-friendly login interface
+- Users can log in with their credentials
+- Session is maintained across visits
+- Error handling for invalid login attempts
 
 ### Task 3: Password Reset System
 **User Stories:** 16
-**Description:** Implement secure password reset functionality via email.
+**Description:** Implement password reset functionality for users who forget their password.
 
 **Acceptance Criteria:**
-- Users can request password reset via email
-- Reset link expires after 1 hour
-- New password must meet strength requirements
-- Confirmation email sent after successful reset
-- Rate limiting to prevent abuse
-- Mobile-responsive reset flow
+- Users can request a password reset
+- Users can set a new password
+- Confirmation is provided after successful reset
 
-## Task Management Core
+## Initial Setup
 
-### Task 4: Room/Area Management
+### Task 4: Neat Freak Score Quiz
+**User Stories:** (Custom Feature - Initial Setup)
+**Description:** Create quiz that assigns users a cleanliness rating from 0-100.
+
+**Acceptance Criteria:**
+- Quiz asks 8 questions about cleaning frequency and preferences
+- Score is calculated and categorized into one of 5 levels:
+  - 0-20: Minimalist Maintainer
+  - 21-40: Casual Cleaner
+  - 41-60: Routine Ready
+  - 61-80: Neat Freak
+  - 81-100: Spotless Specialist
+- Score is saved to user profile
+
+### Task 5: Dwelling Type Selection
 **User Stories:** 3
-**Description:** Create system for users to add and manage rooms/areas for task assignment.
+**Description:** Allow users to select their dwelling type and which rooms apply to them.
 
 **Acceptance Criteria:**
-- Users can add custom rooms/areas
-- Default rooms: Kitchen, Bathroom, Bedroom, Living Room, Laundry
-- Edit and delete room functionality
-- Room validation (unique names per user)
-- Visual room icons and colors
-- Mobile-optimized room management interface
+- Users can select which rooms they have (Kitchen, Bathroom, Bedroom, Living Room, Laundry)
+- Room selection is saved to user profile
+- Only selected rooms appear in the app
 
-### Task 5: Task Creation & Management
-**User Stories:** 4, 5, 6
-**Description:** Build comprehensive task creation system with frequency, priority, and checklists.
+### Task 6: Priority Room Selection
+**User Stories:** 5
+**Description:** Let users prioritize their top 2 most important cleaning areas during setup.
 
 **Acceptance Criteria:**
-- Create tasks with title, description, room assignment
-- Set task frequency (daily, weekly, monthly, custom)
-- Priority levels (Low, Medium, High) with visual indicators
-- Create step-by-step checklists for each task
-- Edit and delete tasks
-- Mobile-first task creation interface
-- Task validation and error handling
+- Users select their top 2 priority rooms
+- Priority rooms are visually indicated in the app
+- Users can update priorities in settings
 
-### Task 6: Task Completion System
-**User Stories:** 7
-**Description:** Implement task completion with progress tracking and checklist management.
+### Task 7: Cleaning Day Selection
+**User Stories:** 4, 8
+**Description:** Allow users to choose their weekly cleaning day.
 
 **Acceptance Criteria:**
-- Mark tasks as complete with timestamp
-- Complete individual checklist items
-- Track completion time and progress
-- Undo completion within 5 minutes
-- Visual completion indicators
-- Mobile-optimized completion interface
+- Users select one day of the week for cleaning
+- Cleaning day is saved and used for scheduling
+- Users can change their cleaning day in settings
 
-### Task 7: Due Dates & Reminders
-**User Stories:** 8
-**Description:** Create scheduling system with due dates and reminder notifications.
+## Task Management
 
-**Acceptance Criteria:**
-- Set due dates for tasks
-- Configure reminder times (1 hour, 1 day, 1 week before)
-- Push notifications for reminders
-- Overdue task highlighting
-- Calendar date picker interface
-- Time zone support for scheduling
-
-### Task 8: Postpone Feature
-**User Stories:** (Custom Feature)
-**Description:** Implement task postponement with restricted options.
+### Task 8: Room-Based Task Checklists
+**User Stories:** 6, 7
+**Description:** Create predefined task checklists for each room that users can complete.
 
 **Acceptance Criteria:**
-- Postpone button on active tasks
+- Kitchen has 11 tasks (wipe counters, clean fridge, wipe stove, clean oven, wash dishes, wipe walls, sweep, mop, clean microwave, clean cabinet under sink, take out trash/recyclables)
+- Bathroom has 7 tasks (clean toilet, clean tub/shower, sweep, mop, clean mirror, clean sink/countertop, clean cabinet under sink)
+- Bedroom has 8 tasks (make bed, vacuum, clean window seals, clean baseboards, remove dishes/debris, dust, clean off dresser, clean windowsill)
+- Living Room has 5 tasks (vacuum, wipe furniture with pledge, dust, discard debris, clean windowsill)
+- Laundry has 5 tasks (separate clothes, wash whites, wash colors, fold clothes, put clothes away)
+- Users can check off individual tasks
+- Room is only marked complete when ALL tasks are checked
+- Task completion is tracked and saved
+
+### Task 9: Task Postponement Feature
+**User Stories:** 4
+**Description:** Allow users to postpone cleaning with only two options available.
+
+**Acceptance Criteria:**
+- Users can postpone a scheduled cleaning
 - Only two options: "This time tomorrow" or "This time next week"
-- Clear indication of postponed tasks
-- Postpone history tracking
-- Limit postponements to 3 times per task
-- Mobile-friendly postpone interface
+- No other postponement timeframes allowed
+- Postponed tasks show updated due dates
 
-## Dashboard & Analytics
+### Task 10: Task Completion Tracking
+**User Stories:** 7
+**Description:** Track which tasks have been completed and which need to be done.
 
-### Task 9: Overview Dashboard
+**Acceptance Criteria:**
+- Completed tasks are visually marked
+- Users can see what has been completed vs. what remains
+- Completion data is saved
+
+## Dashboard & Progress
+
+### Task 11: Overview Dashboard
 **User Stories:** 9
-**Description:** Create main dashboard showing task status and quick insights.
+**Description:** Create main dashboard showing pending, overdue, and completed tasks.
 
 **Acceptance Criteria:**
-- Display pending, overdue, and completed tasks count
-- Today's tasks prominently displayed
-- Weekly completion percentage
-- Quick add task button
-- Room-based task summary
-- Responsive dashboard design
-- Real-time task status updates
+- Dashboard shows pending tasks
+- Overdue tasks are highlighted (shown in red)
+- Completed tasks are displayed
+- User can quickly see task status at a glance
 
-### Task 10: Task Analytics
+### Task 12: Cleanliness Health Score
 **User Stories:** 14
-**Description:** Build analytics system showing completion trends and insights.
+**Description:** Calculate and display weekly cleanliness health score based on task completion.
 
 **Acceptance Criteria:**
-- Weekly/monthly completion charts
-- Room-based completion rates
-- Time spent on tasks analytics
-- Task frequency analysis
-- Identify problem areas and busy periods
-- Export analytics data (PDF/CSV)
-- Mobile-optimized analytics views
+- Score is calculated based on completed tasks each week
+- Score is displayed on dashboard
+- Score is categorized by cleaning type (kitchen, bathroom, etc.)
+- Score includes priority tracking
 
-## Special Features
-
-### Task 11: Neat Freak Score Quiz
+### Task 13: Share Score Feature
 **User Stories:** (Custom Feature)
-**Description:** Create interactive quiz to determine cleaning personality type.
+**Description:** Allow users to share their cleanliness health score.
 
 **Acceptance Criteria:**
-- 5-category scoring system (0-100 scale)
-- Categories: Minimalist Maintainer, Casual Cleaner, Routine Ready, Neat Freak, Spotless Specialist
-- 10-15 multiple choice questions about cleaning habits
-- Visual results page with category description
-- Share score feature
-- Mobile-optimized quiz interface
+- Users can copy their score to clipboard
+- Score is formatted with breakdown
+- Users decide when and where to share (not automatic)
 
-### Task 12: Room Checklists
-**User Stories:** (Custom Feature)
-**Description:** Implement pre-defined checklists for each room type.
+### Task 14: Analytics Page
+**User Stories:** 14
+**Description:** Create analytics page showing what tasks were completed and what needs improvement.
 
 **Acceptance Criteria:**
-- Kitchen: 11 standard tasks (counters, sink, appliances, etc.)
-- Bathroom: 7 standard tasks (toilet, shower, mirror, etc.)
-- Bedroom: 8 standard tasks (bed, closet, dusting, etc.)
-- Living Room: 5 standard tasks (vacuum, dust, surfaces, etc.)
-- Laundry: 5 standard tasks (sort, wash, dry, fold, put away)
-- Customizable checklist items
-- Progress tracking for room checklists
+- Shows which tasks were completed vs. incomplete
+- Identifies tasks that are frequently skipped (problem areas)
+- Displays trends over time
 
-### Task 13: Cleaning Tips System
-**User Stories:** 11
-**Description:** Create cleaning tips and best practices database.
+## Notifications & Reminders
 
-**Acceptance Criteria:**
-- Task-specific cleaning tips
-- Tips organized by room and task type
-- Search functionality for tips
-- Tip rating and feedback system
-- Mobile-friendly tip display
-- Offline tip access
-
-### Task 14: Cleanliness Health Score
-**User Stories:** (Custom Feature)
-**Description:** Develop scoring system to track and share cleaning progress.
-
-**Acceptance Criteria:**
-- Calculate health score based on task completion
-- Score factors: frequency, consistency, thoroughness
-- Share score on social media
-- Score history and trends
-- Comparison with user averages
-- Mobile-optimized score display
-
-## Integration & Localization
-
-### Task 15: Calendar Integration
-**User Stories:** 10
-**Description:** Integrate with Google Calendar and Apple Calendar.
-
-**Acceptance Criteria:**
-- Google Calendar OAuth integration
-- Apple Calendar integration (iOS)
-- Two-way sync for tasks
-- Conflict detection and resolution
-- Sync preferences and settings
-- Error handling for sync failures
-
-### Task 16: Localization Support
-**User Stories:** 12
-**Description:** Implement multi-language and time zone support.
-
-**Acceptance Criteria:**
-- Support for English, Spanish, French, German
-- Time zone detection and conversion
-- Localized date/time formats
-- Language preference in user settings
-- RTL language support preparation
-- Mobile localization testing
-
-## Offline & Help
-
-### Task 17: Offline Access
-**User Stories:** 13
-**Description:** Enable offline access to current checklists with sync capability.
-
-**Acceptance Criteria:**
-- Service worker for offline caching
-- Access to current day's tasks offline
-- Mark tasks complete offline
-- Sync changes when connection restored
-- Offline indicator in UI
-- Conflict resolution for sync
-
-### Task 18: In-App Help & FAQs
-**User Stories:** 15
-**Description:** Create comprehensive help system and FAQ section.
-
-**Acceptance Criteria:**
-- Searchable help articles
-- Video tutorials for key features
-- FAQ section with common issues
-- Contact support integration
-- Contextual help tooltips
-- Mobile-optimized help interface
-
-## Push Notifications
-
-### Task 19: Push Notification System
+### Task 15: Push Notifications
 **User Stories:** 18
-**Description:** Implement push notifications for upcoming tasks and reminders.
+**Description:** Send push notifications for upcoming cleaning tasks.
 
 **Acceptance Criteria:**
-- Browser push notification support
-- Mobile app push notifications
-- Customizable notification preferences
-- Task reminder notifications
-- Achievement notifications
-- Quiet hours and do-not-disturb settings
+- User receives ONE push notification per week about cleaning day
+- Notification is sent at user-configured time
+- Users can enable/disable notifications in settings
 
-## Technical Tasks
-
-### Task 20: Database Schema Implementation
-**User Stories:** All
-**Description:** Set up complete database schema with relationships and constraints.
+### Task 16: In-App Reminders
+**User Stories:** 8
+**Description:** Show in-app popup reminders for tasks due today.
 
 **Acceptance Criteria:**
-- Users, tasks, rooms, checklists tables
-- Proper foreign key relationships
-- Indexes for performance
-- Data validation constraints
-- Migration scripts
-- Seed data for testing
+- Popup appears when user opens app on cleaning day
+- Shows list of tasks due today
+- User can dismiss reminder
 
-### Task 21: API Development
-**User Stories:** All
-**Description:** Build RESTful API endpoints for all features.
+## Additional Features
 
-**Acceptance Criteria:**
-- Authentication endpoints (register, login, reset)
-- Task CRUD operations
-- Room management endpoints
-- Analytics data endpoints
-- Proper error handling and validation
-- API documentation
-
-### Task 22: PWA Setup & Configuration
-**User Stories:** All
-**Description:** Configure Progressive Web App features for mobile experience.
+### Task 17: Cleaning Tips Page
+**User Stories:** 11
+**Description:** Create a page with cleaning tips and best practices.
 
 **Acceptance Criteria:**
-- Service worker implementation
-- Web app manifest
-- Offline caching strategy
-- App install prompts
-- Push notification setup
-- Mobile app-like experience
+- Tips page is accessible from main navigation
+- Displays tips including:
+  - Dust before sweeping
+  - Always clean top to bottom
+  - Always dry clean before wet clean
+  - Empty your vacuum
+  - Have towels on hand
+  - Replenish your cleaning supplies
+- Tips are easy to read
 
-### Task 23: Testing Suite
-**User Stories:** All
-**Description:** Implement comprehensive testing for all features.
-
-**Acceptance Criteria:**
-- Unit tests for core functionality
-- Integration tests for API endpoints
-- E2E tests for user flows
-- Mobile responsive testing
-- Performance testing
-- Accessibility testing
-
-### Task 24: Deployment & CI/CD
-**User Stories:** All
-**Description:** Set up deployment pipeline and infrastructure.
+### Task 18: Calendar Integration
+**User Stories:** 10
+**Description:** Integrate cleaning tasks with Google Calendar and Apple Calendar.
 
 **Acceptance Criteria:**
-- Production environment setup
-- CI/CD pipeline configuration
-- Database migration automation
-- SSL certificate configuration
-- Monitoring and logging setup
-- Backup and recovery procedures
+- Users can connect their Google Calendar
+- Users can connect their Apple Calendar
+- Cleaning day appears as calendar event
+
+### Task 19: Offline Access
+**User Stories:** 13
+**Description:** Enable users to access their checklist without internet and sync later.
+
+**Acceptance Criteria:**
+- Current week's checklist is available offline
+- Users can check off tasks without internet
+- Changes sync when connection is restored
+
+### Task 20: Help & FAQs
+**User Stories:** 15
+**Description:** Create help section so users can solve common issues without contacting support.
+
+**Acceptance Criteria:**
+- FAQ section with common questions
+- Help documentation for key features
+- Easy to navigate and search
+
+### Task 21: Localization Support
+**User Stories:** 12
+**Description:** Support different languages and timezones.
+
+**Acceptance Criteria:**
+- App detects user's timezone
+- Dates and times display in user's local timezone
+- Cleaning day is scheduled according to local time
