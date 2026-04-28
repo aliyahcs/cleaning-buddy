@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   BookmarkIcon,
@@ -8,154 +8,44 @@ import {
 
 export const Tips: React.FC = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [selectedCategory, setSelectedCategory] = React.useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [selectedTip, setSelectedTip] = useState<any>(null);
   const [selectedRoom, setSelectedRoom] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [cleaningTips, setCleaningTips] = useState<any[]>([]);
 
-  const cleaningTips = [
-    {
-      id: 1,
-      category: 'general',
-      title: 'Dust before sweeping',
-      content: 'Always dust surfaces before sweeping or vacuuming to avoid spreading dust around your home. Start from high surfaces and work your way down to capture falling dust particles.',
-      icon: '🧹'
-    },
-    {
-      id: 2,
-      category: 'general',
-      title: 'Always clean top to bottom',
-      content: 'Start cleaning from high surfaces and work your way down to avoid re-cleaning areas. Gravity will help pull dust and debris downward, making your cleaning more efficient.',
-      icon: '⬇️'
-    },
-    {
-      id: 3,
-      category: 'general',
-      title: 'Always dry clean before wet clean',
-      content: 'Use dry cleaning methods (dusting, sweeping) before wet methods (mopping, wiping). This prevents mud streaks and makes wet cleaning more effective.',
-      icon: '🧹'
-    },
-    {
-      id: 4,
-      category: 'general',
-      title: 'Empty your vacuum',
-      content: 'Empty vacuum bag or canister regularly for better suction and performance. A full vacuum reduces efficiency and can spread odors.',
-      icon: '🌪'
-    },
-    {
-      id: 5,
-      category: 'general',
-      title: 'Have towels on hand',
-      content: 'Keep cleaning towels readily available to wipe up spills immediately. Quick action prevents stains from setting and makes cleanup faster.',
-      icon: '🧻'
-    },
-    {
-      id: 6,
-      category: 'general',
-      title: 'Replenish your cleaning supplies',
-      content: 'Restock cleaning supplies before you run out to avoid interruptions. Keep a checklist of frequently used items and check it regularly.',
-      icon: '📦'
-    },
-    {
-      id: 7,
-      category: 'kitchen',
-      title: 'Clean microwave with lemon',
-      content: 'Place a microwave-safe bowl with water and lemon slices inside. Microwave for 2-3 minutes, then let sit for 5 minutes. The steam helps loosen grime for easy cleaning.',
-      icon: '🍋'
-    },
-    {
-      id: 8,
-      category: 'kitchen',
-      title: 'Use baking soda for tough stains',
-      content: 'Make a paste with baking soda and water for tough kitchen stains. Let it sit for 15 minutes before scrubbing. Natural and effective.',
-      icon: '🧪'
-    },
-    {
-      id: 9,
-      category: 'bathroom',
-      title: 'Clean shower head with vinegar',
-      content: 'Remove shower head and soak in white vinegar for 1 hour to dissolve mineral deposits. Rinse thoroughly before reattaching.',
-      icon: '🚿'
-    },
-    {
-      id: 10,
-      category: 'bathroom',
-      title: 'Prevent soap scum',
-      content: 'Apply a thin layer of baby oil or car wax on shower doors and glass after cleaning. This prevents soap scum buildup and makes future cleaning easier.',
-      icon: '🚿'
-    },
-    {
-      id: 11,
-      category: 'bathroom',
-      title: 'Clean grout with toothbrush',
-      content: 'Use an old toothbrush and baking soda paste to clean grout lines. The small bristles reach tight spaces that sponges can\'t access.',
-      icon: '🦷'
-    },
-    {
-      id: 12,
-      category: 'bedroom',
-      title: 'Flip mattresses regularly',
-      content: 'Rotate and flip your mattress every 3-6 months to ensure even wear and prevent sagging. Mark the date on your calendar.',
-      icon: '🛏'
-    },
-    {
-      id: 13,
-      category: 'bedroom',
-      title: 'Use lint roller on clothes',
-      content: 'Use a lint roller on clothes before washing to remove lint and pet hair. This prevents lint buildup in the washer and on clean clothes.',
-      icon: '👔'
-    },
-    {
-      id: 14,
-      category: 'bedroom',
-      title: 'Organize closet by season',
-      content: 'Organize your closet by season and store off-season clothes in vacuum bags. This makes finding items easier and frees up space.',
-      icon: '👗'
-    },
-    {
-      id: 15,
-      category: 'living-room',
-      title: 'Clean electronics with microfiber',
-      content: 'Use microfiber cloths to clean electronics and screens. They trap dust effectively without leaving lint or scratches.',
-      icon: '📺'
-    },
-    {
-      id: 16,
-      category: 'living-room',
-      title: 'Vacuum in different directions',
-      content: 'Vacuum carpet in different directions each time (north-south, then east-west). This lifts carpet fibers and removes more embedded dirt.',
-      icon: '🌪'
-    },
-    {
-      id: 17,
-      category: 'living-room',
-      title: 'Use white vinegar on windows',
-      content: 'Mix equal parts white vinegar and water in a spray bottle. Perfect for streak-free window cleaning and much cheaper than commercial cleaners.',
-      icon: '🪟'
-    },
-    {
-      id: 18,
-      category: 'laundry',
-      title: 'Sort laundry properly',
-      content: 'Sort laundry by color, fabric type, and washing temperature. This prevents color bleeding and fabric damage. Use mesh bags for delicates.',
-      icon: '🧺'
-    },
-    {
-      id: 19,
-      category: 'laundry',
-      title: 'Don\'t overload washer',
-      content: 'Fill washer only 3/4 full to allow proper agitation and cleaning. Overloading prevents clothes from getting clean and can damage the machine.',
-      icon: '🌊'
-    },
-    {
-      id: 20,
-      category: 'laundry',
-      title: 'Clean dryer lint filter',
-      content: 'Clean dryer lint filter after every use. A clogged filter reduces efficiency, increases drying time, and can be a fire hazard.',
-      icon: '🔥'
-    }
-  ];
+  // Fetch tips from API
+  useEffect(() => {
+    const fetchTips = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/cleaning-tips');
+        if (!response.ok) {
+          throw new Error('Failed to fetch cleaning tips');
+        }
+        const data = await response.json();
+        
+        // Transform API data to match frontend structure
+        const transformedTips = data.tips.map((tip: any) => ({
+          id: tip.tip_id,
+          category: tip.category || 'general',
+          title: tip.title,
+          content: tip.tip_text,
+          icon: '💡' // Default icon, could be fetched from API later
+        }));
+        
+        setCleaningTips(transformedTips);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTips();
+  }, []);
 
   const categories = [
     { id: 'all', name: 'All Tips', icon: '📚' },
@@ -173,6 +63,22 @@ export const Tips: React.FC = () => {
     const matchesCategory = selectedCategory === 'all' || tip.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '1.125rem', color: '#6b7280' }}>Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '1.125rem', color: '#dc2626' }}>Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>

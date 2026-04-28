@@ -29,151 +29,65 @@ export const RoomChecklists: React.FC = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  // Default rooms data
+  // Default rooms data structure
   const defaultRooms: Room[] = [
-    {
-      id: 1,
-      name: 'Kitchen',
-      icon: '🍳',
-      tasks: [
-        { id: 1, name: 'Wipe down counter tops', completed: true, postponed: false, dueDate: 'Tomorrow, 9:00 AM' },
-        { id: 2, name: 'Clean out refrigerator', completed: true, postponed: false, dueDate: 'Tomorrow, 9:30 AM' },
-        { id: 3, name: 'Wipe down stove', completed: false, postponed: false, dueDate: 'Tomorrow, 10:00 AM' },
-        { id: 4, name: 'Clean oven', completed: false, postponed: false, dueDate: 'Tomorrow, 10:30 AM' },
-        { id: 5, name: 'Wash dishes', completed: true, postponed: false, dueDate: 'Tomorrow, 11:00 AM' },
-        { id: 6, name: 'Wipe down walls', completed: false, postponed: false, dueDate: 'Tomorrow, 11:30 AM' },
-        { id: 7, name: 'Sweep floor', completed: true, postponed: false, dueDate: 'Tomorrow, 12:00 PM' },
-        { id: 8, name: 'Mop floors', completed: false, postponed: false, dueDate: 'Tomorrow, 12:30 PM' },
-        { id: 9, name: 'Clean microwave', completed: true, postponed: false, dueDate: 'Tomorrow, 1:00 PM' },
-        { id: 10, name: 'Clean cabinet under sink', completed: false, postponed: false, dueDate: 'Tomorrow, 1:30 PM' },
-        { id: 11, name: 'Take out trash/recyclables', completed: false, postponed: false, dueDate: 'Tomorrow, 6:00 PM' }
-      ]
-    },
-    {
-      id: 2,
-      name: 'Bathroom',
-      icon: '🚿',
-      tasks: [
-        { id: 12, name: 'Clean toilet', completed: true, postponed: false, dueDate: 'Tomorrow, 9:00 AM' },
-        { id: 13, name: 'Clean bathtub/shower', completed: false, postponed: false, dueDate: 'Tomorrow, 10:30 AM' },
-        { id: 14, name: 'Sweep floor', completed: true, postponed: false, dueDate: 'Tomorrow, 11:00 AM' },
-        { id: 15, name: 'Mop floor', completed: false, postponed: false, dueDate: 'Tomorrow, 11:30 AM' },
-        { id: 16, name: 'Clean mirror', completed: true, postponed: false, dueDate: 'Tomorrow, 12:00 PM' },
-        { id: 17, name: 'Clean sink and countertop', completed: false, postponed: false, dueDate: 'Tomorrow, 12:30 PM' },
-        { id: 18, name: 'Clean cabinet under sink', completed: false, postponed: false, dueDate: 'Tomorrow, 1:00 PM' }
-      ]
-    },
-    {
-      id: 3,
-      name: 'Bedroom',
-      icon: '🛏',
-      tasks: [
-        { id: 19, name: 'Make bed', completed: true, postponed: false, dueDate: 'Tomorrow, 9:00 AM' },
-        { id: 20, name: 'Vacuum', completed: false, postponed: false, dueDate: 'Tomorrow, 11:00 AM' },
-        { id: 21, name: 'Clean window seals', completed: false, postponed: false, dueDate: 'Tomorrow, 11:30 AM' },
-        { id: 22, name: 'Clean baseboards', completed: false, postponed: false, dueDate: 'Tomorrow, 12:00 PM' },
-        { id: 23, name: 'Remove dishes/debris', completed: true, postponed: false, dueDate: 'Tomorrow, 12:30 PM' },
-        { id: 24, name: 'Dust', completed: false, postponed: false, dueDate: 'Tomorrow, 1:00 PM' },
-        { id: 25, name: 'Clean off dresser', completed: false, postponed: false, dueDate: 'Tomorrow, 1:30 PM' },
-        { id: 26, name: 'Clean windowsill', completed: false, postponed: false, dueDate: 'Tomorrow, 2:00 PM' }
-      ]
-    },
-    {
-      id: 4,
-      name: 'Living Room',
-      icon: '🛋',
-      tasks: [
-        { id: 27, name: 'Vacuum floor', completed: false, postponed: false, dueDate: 'Tomorrow, 11:30 AM' },
-        { id: 28, name: 'Wipe down furniture with pledge', completed: false, postponed: false, dueDate: 'Tomorrow, 12:00 PM' },
-        { id: 29, name: 'Dust', completed: false, postponed: false, dueDate: 'Tomorrow, 12:30 PM' },
-        { id: 30, name: 'Discard debris', completed: true, postponed: false, dueDate: 'Tomorrow, 1:00 PM' },
-        { id: 31, name: 'Clean windowsill', completed: false, postponed: false, dueDate: 'Tomorrow, 1:30 PM' }
-      ]
-    },
-    {
-      id: 5,
-      name: 'Laundry',
-      icon: '🧺',
-      tasks: [
-        { id: 32, name: 'Separate clothes', completed: false, postponed: false, dueDate: 'Tomorrow, 2:00 PM' },
-        { id: 33, name: 'Wash whites', completed: false, postponed: false, dueDate: 'Tomorrow, 2:30 PM' },
-        { id: 34, name: 'Wash colors', completed: false, postponed: false, dueDate: 'Tomorrow, 3:00 PM' },
-        { id: 35, name: 'Fold clothes', completed: false, postponed: false, dueDate: 'Tomorrow, 3:30 PM' },
-        { id: 36, name: 'Put clothes away', completed: false, postponed: false, dueDate: 'Tomorrow, 4:00 PM' }
-      ]
-    }
+    { id: 1, name: 'Kitchen', icon: '🍳', tasks: [] },
+    { id: 2, name: 'Bathroom', icon: '🚿', tasks: [] },
+    { id: 3, name: 'Bedroom', icon: '🛏', tasks: [] },
+    { id: 4, name: 'Living Room', icon: '🛋', tasks: [] },
+    { id: 5, name: 'Laundry', icon: '🧺', tasks: [] }
   ];
 
   const [rooms, setRooms] = useState<Room[]>(defaultRooms);
 
-  // Load rooms from localStorage on mount
+  // Fetch tasks from API
   useEffect(() => {
-    const loadRooms = () => {
-      const saved = localStorage.getItem('roomChecklists');
-      if (saved) {
-        try {
-          setRooms(JSON.parse(saved));
-        } catch (e) {
-          console.error('Failed to parse saved rooms:', e);
+    const fetchTasks = async () => {
+      if (!roomId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:3000/api/task-templates/${roomId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch tasks');
         }
+        const data = await response.json();
+        
+        // Transform API data to match frontend structure
+        const transformedTasks = data.tasks.map((task: any) => ({
+          id: task.task_template_id,
+          name: task.task_name,
+          completed: false,
+          postponed: false,
+          dueDate: 'Tomorrow, 9:00 AM' // Default due date
+        }));
+        
+        setRooms(prevRooms => {
+          const roomIndex = prevRooms.findIndex(r => r.id.toString() === roomId);
+          if (roomIndex !== -1) {
+            const updatedRooms = [...prevRooms];
+            updatedRooms[roomIndex] = {
+              ...updatedRooms[roomIndex],
+              tasks: transformedTasks
+            };
+            return updatedRooms;
+          }
+          return prevRooms;
+        });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
       }
     };
-    
-    loadRooms();
-    
-    // Check if there's a new task to add from URL params
-    const urlParams = new URLSearchParams(window.location.search);
-    const newTaskName = urlParams.get('newTask');
-    const newTaskRoom = urlParams.get('room');
-    
-    if (newTaskName && newTaskRoom) {
-      setRooms(prevRooms => {
-        const roomIndex = prevRooms.findIndex(r => r.id.toString() === newTaskRoom);
-        if (roomIndex !== -1) {
-          const newTaskId = Math.max(...prevRooms[roomIndex].tasks.map(t => t.id), 0) + 1;
-          const tomorrow = new Date();
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          const dayName = tomorrow.toLocaleDateString('en-US', { weekday: 'long' });
-          const timeStr = tomorrow.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-          
-          const updatedRooms = [...prevRooms];
-          updatedRooms[roomIndex] = {
-            ...updatedRooms[roomIndex],
-            tasks: [...updatedRooms[roomIndex].tasks, {
-              id: newTaskId,
-              name: newTaskName,
-              completed: false,
-              postponed: false,
-              dueDate: `${dayName}, ${timeStr}`
-            }]
-          };
-          
-          // Save to localStorage
-          localStorage.setItem('roomChecklists', JSON.stringify(updatedRooms));
-          
-          // Clean URL
-          window.history.replaceState({}, '', window.location.pathname + '?room=' + newTaskRoom);
-          
-          return updatedRooms;
-        }
-        return prevRooms;
-      });
-    }
-    
-    // Listen for custom event when tasks are added from other pages
-    const handleStorageChange = () => {
-      loadRooms();
-    };
-    
-    window.addEventListener('roomChecklistsUpdated', handleStorageChange);
-    window.addEventListener('storage', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('roomChecklistsUpdated', handleStorageChange);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
+
+    fetchTasks();
+  }, [roomId]);
 
   // Save rooms to localStorage whenever they change
   useEffect(() => {
@@ -281,6 +195,22 @@ export const RoomChecklists: React.FC = () => {
     setSelectedDate('');
     setSelectedTask(null);
   };
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '1.125rem', color: '#6b7280' }}>Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '1.125rem', color: '#dc2626' }}>Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>

@@ -164,9 +164,34 @@ export const InitialSetupFlow: React.FC = () => {
     }
   };
 
-  const completeSetup = () => {
-    // Mock completion - replace with actual API call
-    navigate('/dashboard');
+  const completeSetup = async () => {
+    try {
+      // Save each quiz response to the API
+      for (const [questionId, answerValue] of Object.entries(quizAnswers)) {
+        const response = await fetch('http://localhost:3000/api/quiz-responses', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: '1', // TODO: Use actual user ID from auth
+            question_id: parseInt(questionId),
+            option_id: answerValue // TODO: This should be the actual option_id, not the value
+          }),
+        });
+
+        if (!response.ok) {
+          console.error('Failed to save quiz response for question', questionId);
+        }
+      }
+
+      // Navigate to dashboard after saving
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error saving quiz responses:', error);
+      // Still navigate even if save fails for now
+      navigate('/dashboard');
+    }
   };
 
   const toggleRoomSelection = (roomId: number) => {

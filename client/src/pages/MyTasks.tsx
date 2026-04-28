@@ -13,74 +13,42 @@ export const MyTasks: React.FC = () => {
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [newTaskName, setNewTaskName] = useState('');
   const [selectedRoomId, setSelectedRoomId] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  // Default rooms data
-  const defaultRooms = [
-    { 
-      id: 1, 
-      name: 'Kitchen', 
-      icon: '🍳',
-      totalTasks: 11,
-      completedTasks: 8,
-      status: 'in-progress',
-      nextScheduled: 'Tomorrow, 9:00 AM'
-    },
-    { 
-      id: 2, 
-      name: 'Bathroom', 
-      icon: '🚿',
-      totalTasks: 7,
-      completedTasks: 7,
-      status: 'completed',
-      nextScheduled: 'Next week, 9:00 AM'
-    },
-    { 
-      id: 3, 
-      name: 'Bedroom', 
-      icon: '🛏',
-      totalTasks: 8,
-      completedTasks: 3,
-      status: 'pending',
-      nextScheduled: 'Saturday, 10:00 AM'
-    },
-    { 
-      id: 4, 
-      name: 'Living Room', 
-      icon: '🛋',
-      totalTasks: 5,
-      completedTasks: 2,
-      status: 'pending',
-      nextScheduled: 'Saturday, 11:00 AM'
-    },
-    { 
-      id: 5, 
-      name: 'Laundry', 
-      icon: '🧺',
-      totalTasks: 5,
-      completedTasks: 0,
-      status: 'pending',
-      nextScheduled: 'Saturday, 2:00 PM'
-    }
-  ];
-  
-  const [rooms, setRooms] = useState(defaultRooms);
+  const [rooms, setRooms] = useState<any[]>([]);
 
-  // Load rooms from localStorage on mount
+  // Fetch rooms from API
   useEffect(() => {
-    const saved = localStorage.getItem('rooms');
-    if (saved) {
+    const fetchRooms = async () => {
       try {
-        setRooms(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to parse saved rooms:', e);
+        const response = await fetch('http://localhost:3000/api/rooms');
+        if (!response.ok) {
+          throw new Error('Failed to fetch rooms');
+        }
+        const data = await response.json();
+        
+        // Transform API data to match frontend structure
+        const transformedRooms = data.rooms.map((room: any) => ({
+          id: room.room_id,
+          name: room.name,
+          icon: '🍳', // Default icon, could be fetched from API later
+          totalTasks: 0, // Will be calculated from tasks
+          completedTasks: 0,
+          status: 'pending',
+          nextScheduled: 'TBD'
+        }));
+        
+        setRooms(transformedRooms);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
       }
-    }
-  }, []);
+    };
 
-  // Save rooms to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('rooms', JSON.stringify(rooms));
-  }, [rooms]);
+    fetchRooms();
+  }, []);
 
   const currentWeek = 'March 24 - March 30, 2026';
 
@@ -96,6 +64,22 @@ export const MyTasks: React.FC = () => {
   const getCompletionPercentage = (completed: number, total: number) => {
     return Math.round((completed / total) * 100);
   };
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '1.125rem', color: '#6b7280' }}>Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '1.125rem', color: '#dc2626' }}>Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>

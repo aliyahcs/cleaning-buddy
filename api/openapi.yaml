@@ -1,0 +1,438 @@
+openapi: 3.0.3
+info:
+  title: Cleaning Buddy API
+  description: API for the Cleaning Buddy application - a task management system for household cleaning
+  version: 1.0.0
+  contact:
+    name: Cleaning Buddy Team
+    email: support@cleaningbuddy.com
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+paths:
+  /api/rooms:
+    get:
+      summary: Get all rooms
+      description: Retrieves a list of all available rooms in the system
+      operationId: getRooms
+      tags:
+        - Rooms
+      responses:
+        '200':
+          description: Successfully retrieved rooms
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rooms:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Room'
+              example:
+                rooms:
+                  - room_id: 1
+                    name: Kitchen
+                    description: Main kitchen area
+                  - room_id: 2
+                    name: Bathroom
+                    description: Master bathroom
+                  - room_id: 3
+                    name: Bedroom
+                    description: Master bedroom
+                  - room_id: 4
+                    name: Living Room
+                    description: Main living area
+                  - room_id: 5
+                    name: Laundry
+                    description: Laundry room
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/task-templates/{roomId}:
+    get:
+      summary: Get task templates for a room
+      description: Retrieves all task templates for a specific room, ordered by display_order
+      operationId: getTaskTemplates
+      tags:
+        - Task Templates
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          description: The ID of the room to get task templates for
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Successfully retrieved task templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaskTemplate'
+              example:
+                tasks:
+                  - task_template_id: 1
+                    room_id: 1
+                    task_name: Wipe down counter tops
+                    description: Clean all kitchen counters
+                    display_order: 1
+                    is_active: true
+                  - task_template_id: 2
+                    room_id: 1
+                    task_name: Clean out refrigerator
+                    description: Remove expired items and wipe shelves
+                    display_order: 2
+                    is_active: true
+        '400':
+          description: Bad request - invalid room ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/cleaning-tips:
+    get:
+      summary: Get all cleaning tips
+      description: Retrieves all cleaning tips, ordered by display_order
+      operationId: getCleaningTips
+      tags:
+        - Cleaning Tips
+      responses:
+        '200':
+          description: Successfully retrieved cleaning tips
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tips:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CleaningTip'
+              example:
+                tips:
+                  - tip_id: 1
+                    title: Dust before sweeping
+                    tip_text: Always dust surfaces before sweeping or vacuuming to avoid spreading dust around your home.
+                    display_order: 1
+                    is_active: true
+                  - tip_id: 2
+                    title: Clean top to bottom
+                    tip_text: Start cleaning from high surfaces and work your way down to avoid re-cleaning areas.
+                    display_order: 2
+                    is_active: true
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/{userId}:
+    get:
+      summary: Get user by ID
+      description: Retrieves user information including profile data
+      operationId: getUser
+      tags:
+        - Users
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The ID of the user to retrieve
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Successfully retrieved user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+              example:
+                user:
+                  user_id: 1
+                  email: john@example.com
+                  first_name: John
+                  last_name: Doe
+                  neat_freak_score: 85
+                  neat_freak_category: Neat Freak
+        '400':
+          description: Bad request - invalid user ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/quiz-responses:
+    post:
+      summary: Submit quiz response
+      description: Saves a quiz response for a user
+      operationId: createQuizResponse
+      tags:
+        - Quiz Responses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuizResponseRequest'
+            example:
+              user_id: 1
+              question_id: 1
+              option_id: 1
+              free_text_response: null
+      responses:
+        '201':
+          description: Quiz response created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Quiz response saved successfully
+                  response:
+                    $ref: '#/components/schemas/QuizResponse'
+        '400':
+          description: Bad request - invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Room:
+      type: object
+      required:
+        - room_id
+        - name
+      properties:
+        room_id:
+          type: integer
+          description: Unique identifier for the room
+          example: 1
+        name:
+          type: string
+          description: Name of the room
+          example: Kitchen
+        description:
+          type: string
+          description: Description of the room
+          example: Main kitchen area
+
+    TaskTemplate:
+      type: object
+      required:
+        - task_template_id
+        - room_id
+        - task_name
+        - display_order
+        - is_active
+      properties:
+        task_template_id:
+          type: integer
+          description: Unique identifier for the task template
+          example: 1
+        room_id:
+          type: integer
+          description: ID of the room this task belongs to
+          example: 1
+        task_name:
+          type: string
+          description: Name of the task
+          example: Wipe down counter tops
+        description:
+          type: string
+          description: Detailed description of the task
+          example: Clean all kitchen counters
+        display_order:
+          type: integer
+          description: Order in which tasks should be displayed
+          example: 1
+        is_active:
+          type: boolean
+          description: Whether the task template is active
+          example: true
+
+    CleaningTip:
+      type: object
+      required:
+        - tip_id
+        - title
+        - tip_text
+        - display_order
+        - is_active
+      properties:
+        tip_id:
+          type: integer
+          description: Unique identifier for the cleaning tip
+          example: 1
+        title:
+          type: string
+          description: Title of the cleaning tip
+          example: Dust before sweeping
+        tip_text:
+          type: string
+          description: Detailed cleaning tip text
+          example: Always dust surfaces before sweeping or vacuuming to avoid spreading dust around your home.
+        display_order:
+          type: integer
+          description: Order in which tips should be displayed
+          example: 1
+        is_active:
+          type: boolean
+          description: Whether the tip is active
+          example: true
+
+    User:
+      type: object
+      required:
+        - user_id
+        - email
+        - first_name
+        - last_name
+      properties:
+        user_id:
+          type: integer
+          description: Unique identifier for the user
+          example: 1
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: john@example.com
+        first_name:
+          type: string
+          description: User's first name
+          example: John
+        last_name:
+          type: string
+          description: User's last name
+          example: Doe
+        neat_freak_score:
+          type: integer
+          description: User's neat freak score (0-100)
+          example: 85
+        neat_freak_category:
+          type: string
+          description: Category based on neat freak score
+          example: Neat Freak
+
+    QuizResponseRequest:
+      type: object
+      required:
+        - user_id
+        - question_id
+        - option_id
+      properties:
+        user_id:
+          type: integer
+          description: ID of the user submitting the response
+          example: 1
+        question_id:
+          type: integer
+          description: ID of the quiz question
+          example: 1
+        option_id:
+          type: integer
+          description: ID of the selected option
+          example: 1
+        free_text_response:
+          type: string
+          description: Optional free text response
+          example: null
+
+    QuizResponse:
+      type: object
+      required:
+        - response_id
+        - user_id
+        - question_id
+        - option_id
+        - created_at
+      properties:
+        response_id:
+          type: integer
+          description: Unique identifier for the quiz response
+          example: 1
+        user_id:
+          type: integer
+          description: ID of the user who submitted the response
+          example: 1
+        question_id:
+          type: integer
+          description: ID of the quiz question
+          example: 1
+        option_id:
+          type: integer
+          description: ID of the selected option
+          example: 1
+        free_text_response:
+          type: string
+          description: Optional free text response
+          example: null
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the response was created
+          example: 2026-04-27T15:30:00Z
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message describing what went wrong
+          example: Failed to fetch rooms

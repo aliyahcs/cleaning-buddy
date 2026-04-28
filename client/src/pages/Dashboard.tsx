@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   HomeIcon, 
@@ -10,12 +10,30 @@ import {
 } from '@heroicons/react/24/outline';
 
 export const Dashboard: React.FC = () => {
-  // Mock data - replace with actual API calls
-  const userName = 'John';
-  const cleaningDay = 'Saturday';
-  const cleaningTime = '9:00 AM';
-  const weeklyHealthScore = 85;
-  const neatFreakCategory = 'Neat Freak';
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/users/1');
+        if (!response.ok) {
+          throw new Error('Failed to fetch user data');
+        }
+        const data = await response.json();
+        setUserData(data.user);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  // Mock data for upcoming tasks - replace with API call later
   const upcomingTasks = [
     { id: 1, room: 'Kitchen', task: 'Wipe down counter tops', time: '9:00 AM', priority: 'high' },
     { id: 2, room: 'Bathroom', task: 'Clean toilet', time: '9:30 AM', priority: 'high' },
@@ -32,6 +50,28 @@ export const Dashboard: React.FC = () => {
       default: return { bg: '#f9fafb', text: '#6b7280', border: '#e5e7eb' };
     }
   };
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '1.125rem', color: '#6b7280' }}>Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '1.125rem', color: '#dc2626' }}>Error: {error}</div>
+      </div>
+    );
+  }
+
+  const userName = userData?.first_name || 'User';
+  const cleaningDay = 'Saturday'; // TODO: Fetch from user profile
+  const cleaningTime = '9:00 AM'; // TODO: Fetch from user profile
+  const weeklyHealthScore = userData?.neat_freak_score || 85;
+  const neatFreakCategory = userData?.neat_freak_category || 'Neat Freak';
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
