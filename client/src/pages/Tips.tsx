@@ -5,6 +5,7 @@ import {
   MagnifyingGlassIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import { api } from '../lib/api';
 
 export const Tips: React.FC = () => {
   const navigate = useNavigate();
@@ -21,11 +22,7 @@ export const Tips: React.FC = () => {
   useEffect(() => {
     const fetchTips = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/cleaning-tips');
-        if (!response.ok) {
-          throw new Error('Failed to fetch cleaning tips');
-        }
-        const data = await response.json();
+        const data = await api.getCleaningTips();
         
         // Transform API data to match frontend structure
         const transformedTips = data.tips.map((tip: any) => ({

@@ -7,6 +7,7 @@ import {
   ClockIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import { api } from '../lib/api';
 
 export const MyTasks: React.FC = () => {
   const navigate = useNavigate();
@@ -18,26 +19,60 @@ export const MyTasks: React.FC = () => {
   
   const [rooms, setRooms] = useState<any[]>([]);
 
-  // Fetch rooms from API
+  // Fetch rooms and their tasks from API
   useEffect(() => {
-    const fetchRooms = async () => {
+    const fetchRoomsWithTasks = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/rooms');
-        if (!response.ok) {
-          throw new Error('Failed to fetch rooms');
-        }
-        const data = await response.json();
+        const roomsData = await api.getRooms();
         
-        // Transform API data to match frontend structure
-        const transformedRooms = data.rooms.map((room: any) => ({
-          id: room.room_id,
-          name: room.name,
-          icon: '🍳', // Default icon, could be fetched from API later
-          totalTasks: 0, // Will be calculated from tasks
-          completedTasks: 0,
-          status: 'pending',
-          nextScheduled: 'TBD'
-        }));
+        // Transform API data and fetch tasks for each room
+        const transformedRooms = await Promise.all(
+          roomsData.rooms.map(async (room: any) => {
+            // Assign unique icons based on room name
+            let icon = '🏠'; // default icon
+            switch (room.name.toLowerCase()) {
+              case 'kitchen':
+                icon = '🍳';
+                break;
+              case 'bathroom':
+                icon = '🚿';
+                break;
+              case 'bedroom':
+                icon = '🛏';
+                break;
+              case 'living room':
+                icon = '🛋';
+                break;
+              case 'laundry':
+                icon = '🧺';
+                break;
+              default:
+                icon = '🏠';
+            }
+
+            // Fetch tasks for this room
+            let totalTasks = 0;
+            let completedTasks = 0;
+            try {
+              const tasksData = await api.getTaskTemplates(room.room_id);
+              totalTasks = tasksData.tasks.length;
+              // For now, assume no tasks are completed since we don't have task completion tracking
+              completedTasks = 0;
+            } catch (taskErr) {
+              console.error(`Failed to fetch tasks for room ${room.name}:`, taskErr);
+            }
+
+            return {
+              id: room.room_id,
+              name: room.name,
+              icon,
+              totalTasks,
+              completedTasks,
+              status: totalTasks > 0 ? (completedTasks === totalTasks ? 'completed' : 'in-progress') : 'pending',
+              nextScheduled: 'TBD'
+            };
+          })
+        );
         
         setRooms(transformedRooms);
       } catch (err) {
@@ -47,7 +82,7 @@ export const MyTasks: React.FC = () => {
       }
     };
 
-    fetchRooms();
+    fetchRoomsWithTasks();
   }, []);
 
   const currentWeek = 'March 24 - March 30, 2026';

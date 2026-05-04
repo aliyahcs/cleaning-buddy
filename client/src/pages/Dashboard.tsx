@@ -8,6 +8,7 @@ import {
   FireIcon,
   SparklesIcon
 } from '@heroicons/react/24/outline';
+import { api } from '../lib/api';
 
 export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -17,11 +18,7 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/users/1');
-        if (!response.ok) {
-          throw new Error('Failed to fetch user data');
-        }
-        const data = await response.json();
+        const data = await api.getUser(1);
         setUserData(data.user);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');

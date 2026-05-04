@@ -7,6 +7,7 @@ import {
   HomeIcon,
   BellIcon
 } from '@heroicons/react/24/outline';
+import { api } from '../lib/api';
 
 interface QuizQuestion {
   id: number;
@@ -168,19 +169,13 @@ export const InitialSetupFlow: React.FC = () => {
     try {
       // Save each quiz response to the API
       for (const [questionId, answerValue] of Object.entries(quizAnswers)) {
-        const response = await fetch('http://localhost:3000/api/quiz-responses', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: '1', // TODO: Use actual user ID from auth
+        try {
+          await api.createQuizResponse({
+            user_id: 1, // TODO: Use actual user ID from auth
             question_id: parseInt(questionId),
             option_id: answerValue // TODO: This should be the actual option_id, not the value
-          }),
-        });
-
-        if (!response.ok) {
+          });
+        } catch (error) {
           console.error('Failed to save quiz response for question', questionId);
         }
       }

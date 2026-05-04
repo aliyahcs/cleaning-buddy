@@ -5,6 +5,7 @@ import {
   ClockIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import { api } from '../lib/api';
 
 interface Task {
   id: number;
@@ -43,7 +44,7 @@ export const RoomChecklists: React.FC = () => {
 
   const [rooms, setRooms] = useState<Room[]>(defaultRooms);
 
-  // Fetch tasks from API
+  // Fetch tasks from API and handle newTask parameter
   useEffect(() => {
     const fetchTasks = async () => {
       if (!roomId) {
@@ -52,20 +53,35 @@ export const RoomChecklists: React.FC = () => {
       }
 
       try {
-        const response = await fetch(`http://localhost:3000/api/task-templates/${roomId}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch tasks');
-        }
-        const data = await response.json();
+        const data = await api.getTaskTemplates(parseInt(roomId));
         
         // Transform API data to match frontend structure
-        const transformedTasks = data.tasks.map((task: any) => ({
+        let transformedTasks = data.tasks.map((task: any) => ({
           id: task.task_template_id,
           name: task.task_name,
           completed: false,
           postponed: false,
           dueDate: 'Tomorrow, 9:00 AM' // Default due date
         }));
+
+        // Check for newTask in URL parameters
+        const newTask = searchParams.get('newTask');
+        if (newTask) {
+          // Add the new task to the list
+          const newTaskObj = {
+            id: Date.now(), // Use timestamp as temporary ID
+            name: decodeURIComponent(newTask),
+            completed: false,
+            postponed: false,
+            dueDate: 'Tomorrow, 9:00 AM'
+          };
+          transformedTasks = [...transformedTasks, newTaskObj];
+          
+          // Remove the newTask parameter from URL to avoid adding it again on refresh
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('newTask');
+          window.history.replaceState({}, '', newUrl.toString());
+        }
         
         setRooms(prevRooms => {
           const roomIndex = prevRooms.findIndex(r => r.id.toString() === roomId);
@@ -87,7 +103,7 @@ export const RoomChecklists: React.FC = () => {
     };
 
     fetchTasks();
-  }, [roomId]);
+  }, [roomId, searchParams]);
 
   // Save rooms to localStorage whenever they change
   useEffect(() => {
