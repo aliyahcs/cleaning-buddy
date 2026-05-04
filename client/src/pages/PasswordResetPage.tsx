@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { EnvelopeIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 export const PasswordResetPage: React.FC = () => {
@@ -7,8 +7,7 @@ export const PasswordResetPage: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-
+  
   const validateEmail = () => {
     if (!email) {
       setError('Email is required');
@@ -46,31 +45,31 @@ export const PasswordResetPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center">
-            <div className="h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">CB</span>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+      <div style={{ maxWidth: '28rem', width: '100%' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <Link to="/" style={{ display: 'inline-flex', textDecoration: 'none' }}>
+            <div style={{ height: '4rem', width: '4rem', backgroundColor: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(10px)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)' }}>
+              <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.25rem' }}>CB</span>
             </div>
           </Link>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+          <h2 style={{ marginTop: '1.5rem', fontSize: '2rem', fontWeight: '800', color: 'white' }}>
             Reset your password
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p style={{ marginTop: '0.5rem', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.875rem' }}>
             Enter your email address and we'll send you a link to reset your password.
           </p>
         </div>
 
         {!success ? (
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.5rem' }}>
                 Email address
               </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <EnvelopeIcon className="h-5 w-5 text-gray-400" />
+              <div style={{ position: 'relative' }}>
+                <div style={{ position: 'absolute', top: '50%', left: '0.75rem', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
+                  <EnvelopeIcon style={{ height: '1.25rem', width: '1.25rem', color: 'rgba(255, 255, 255, 0.5)' }} />
                 </div>
                 <input
                   id="email"
@@ -80,11 +79,27 @@ export const PasswordResetPage: React.FC = () => {
                   required
                   value={email}
                   onChange={handleChange}
-                  className={`appearance-none block w-full pl-10 pr-10 border ${error ? 'border-red-300' : 'border-gray-300'} rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+                  style={{
+                    appearance: 'none',
+                    display: 'block',
+                    width: '100%',
+                    paddingLeft: '2.5rem',
+                    paddingRight: '0.75rem',
+                    paddingTop: '0.75rem',
+                    paddingBottom: '0.75rem',
+                    border: `1px solid ${error ? 'rgba(239, 68, 68, 0.5)' : 'rgba(255, 255, 255, 0.2)'}`,
+                    borderRadius: '0.5rem',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(10px)',
+                    color: 'white',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                    transition: 'all 0.2s'
+                  }}
                   placeholder="Enter your email"
                 />
                 {error && (
-                  <p className="mt-2 text-sm text-red-600">
+                  <p style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#ef4444' }}>
                     {error}
                   </p>
                 )}
@@ -95,11 +110,26 @@ export const PasswordResetPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: 'white',
+                  backgroundColor: isLoading ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.2)',
+                  backdropFilter: 'blur(10px)',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
               >
                 {isLoading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-t-2 border-white mr-2"></div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div style={{ animation: 'spin 1s linear infinite', height: '1rem', width: '1rem', border: '2px solid transparent', borderTop: '2px solid white', borderRadius: '50%', marginRight: '0.5rem' }}></div>
                     Sending reset link...
                   </div>
                 ) : (
@@ -108,43 +138,43 @@ export const PasswordResetPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="text-center">
+            <div style={{ textAlign: 'center' }}>
               <Link
                 to="/login"
-                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-500"
+                style={{ display: 'inline-flex', alignItems: 'center', fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.9)', textDecoration: 'none' }}
               >
-                <ArrowLeftIcon className="h-4 w-4 mr-1" />
+                <ArrowLeftIcon style={{ height: '1rem', width: '1rem', marginRight: '0.25rem' }} />
                 Back to sign in
               </Link>
             </div>
           </form>
         ) : (
-          <div className="text-center space-y-4">
-            <div className="mx-auto h-16 w-16 bg-green-100 rounded-full flex items-center justify-center">
-              <EnvelopeIcon className="h-8 w-8 text-green-600" />
+          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ margin: '0 auto', height: '4rem', width: '4rem', backgroundColor: 'rgba(34, 197, 94, 0.2)', backdropFilter: 'blur(10px)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <EnvelopeIcon style={{ height: '2rem', width: '2rem', color: '#22c55e' }} />
             </div>
-            <h3 className="text-lg font-medium text-gray-900">
+            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'white' }}>
               Check your email
             </h3>
-            <p className="text-gray-600">
+            <p style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
               We've sent a password reset link to{' '}
-              <span className="font-medium text-gray-900">{email}</span>
+              <span style={{ fontWeight: '500', color: 'white' }}>{email}</span>
             </p>
-            <p className="text-sm text-gray-500">
+            <p style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.7)' }}>
               Didn't receive the email? Check your spam folder or{' '}
               <button
                 onClick={() => setSuccess(false)}
-                className="text-blue-600 hover:text-blue-500 font-medium"
+                style={{ color: 'rgba(255, 255, 255, 0.9)', fontWeight: '500', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
               >
                 try again
               </button>
             </p>
-            <div className="pt-4">
+            <div style={{ paddingTop: '1rem' }}>
               <Link
                 to="/login"
-                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-500"
+                style={{ display: 'inline-flex', alignItems: 'center', fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.9)', textDecoration: 'none' }}
               >
-                <ArrowLeftIcon className="h-4 w-4 mr-1" />
+                <ArrowLeftIcon style={{ height: '1rem', width: '1rem', marginRight: '0.25rem' }} />
                 Back to sign in
               </Link>
             </div>
