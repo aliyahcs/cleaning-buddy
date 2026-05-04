@@ -99,7 +99,6 @@ temp/
 
 # PWA
 service-worker.js
-manifest.json
 
 # Supabase
 supabase/.branches
