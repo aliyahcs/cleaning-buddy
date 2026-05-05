@@ -41,8 +41,8 @@ functions:
     handler: src/lambda.handler
     events:
       - httpApi:
-          path: /{proxy+}
           method: ANY
+          path: /{proxy+}
 
 package:
   patterns:
