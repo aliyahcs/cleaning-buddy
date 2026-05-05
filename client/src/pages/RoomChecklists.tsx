@@ -12,7 +12,8 @@ interface Task {
   name: string;
   completed: boolean;
   postponed: boolean;
-  dueDate?: string; // Full date and time string
+  isOverdue: boolean;
+  dueDate?: string;
 }
 
 interface Room {
@@ -61,7 +62,8 @@ export const RoomChecklists: React.FC = () => {
           name: task.task_name,
           completed: false,
           postponed: false,
-          dueDate: 'Tomorrow, 9:00 AM' // Default due date
+          isOverdue: task.status === 'overdue',
+          dueDate: 'Tomorrow, 9:00 AM'
         }));
 
         // Check for newTask in URL parameters
@@ -69,10 +71,11 @@ export const RoomChecklists: React.FC = () => {
         if (newTask) {
           // Add the new task to the list
           const newTaskObj = {
-            id: Date.now(), // Use timestamp as temporary ID
+            id: Date.now(),
             name: decodeURIComponent(newTask),
             completed: false,
             postponed: false,
+            isOverdue: false,
             dueDate: 'Tomorrow, 9:00 AM'
           };
           transformedTasks = [...transformedTasks, newTaskObj];
@@ -320,7 +323,7 @@ export const RoomChecklists: React.FC = () => {
           <div style={{ padding: '1rem 1.5rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {currentRoom.tasks.map((task) => (
-                <div key={task.id} style={{ display: 'flex', alignItems: 'center', padding: '1rem', borderRadius: '0.5rem', border: task.completed ? '1px solid #bbf7d0' : task.postponed ? '1px solid #fef9c3' : '1px solid #e5e7eb', backgroundColor: task.completed ? '#f0fdf4' : task.postponed ? '#fefce8' : 'white' }}>
+                <div key={task.id} style={{ display: 'flex', alignItems: 'center', padding: '1rem', borderRadius: '0.5rem', border: task.completed ? '1px solid #bbf7d0' : task.isOverdue ? '1px solid #fecaca' : task.postponed ? '1px solid #fef9c3' : '1px solid #e5e7eb', backgroundColor: task.completed ? '#f0fdf4' : task.isOverdue ? '#fef2f2' : task.postponed ? '#fefce8' : 'white' }}>
                   <input type="checkbox" checked={task.completed} onChange={() => toggleTask(task.id)} style={{ height: '1.25rem', width: '1.25rem', color: '#2563eb', borderRadius: '0.25rem', cursor: 'pointer', border: '1px solid #d1d5db' }} />
                   <div style={{ marginLeft: '1rem', flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -329,8 +332,8 @@ export const RoomChecklists: React.FC = () => {
                           {task.name}
                         </h3>
                         {task.dueDate && !task.completed && (
-                          <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
-                            Due: {task.dueDate}
+                          <p style={{ fontSize: '0.875rem', color: task.isOverdue ? '#dc2626' : '#6b7280', marginTop: '0.25rem', fontWeight: task.isOverdue ? '600' : 'normal' }}>
+                            {task.isOverdue ? 'Overdue: ' : 'Due: '}{task.dueDate}
                           </p>
                         )}
                       </div>

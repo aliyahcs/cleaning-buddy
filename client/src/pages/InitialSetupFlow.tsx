@@ -133,6 +133,7 @@ const cleaningDays = [
 export const InitialSetupFlow: React.FC = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
+  const [scoreCopied, setScoreCopied] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState<{ [key: number]: number }>({});
   const [selectedDwelling, setSelectedDwelling] = useState<number | null>(null);
   const [selectedRooms, setSelectedRooms] = useState<number[]>([]);
@@ -247,6 +248,16 @@ export const InitialSetupFlow: React.FC = () => {
               <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#111827', marginBottom: '0.5rem' }}>Your Neat Freak Score</h2>
               <p style={{ fontSize: '1.25rem', fontWeight: '500', marginBottom: '1rem', color: category.color === 'text-purple-600' ? '#9333ea' : category.color === 'text-blue-600' ? '#2563eb' : category.color === 'text-green-600' ? '#16a34a' : category.color === 'text-yellow-600' ? '#ca8a04' : '#4b5563' }}>{category.name}</p>
               <p style={{ color: '#6b7280', maxWidth: '28rem', margin: '0 auto' }}>{category.description}</p>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`I scored ${score}/100 on the Cleaning Buddy quiz! I'm a ${category.name}! 🧹`);
+                  setScoreCopied(true);
+                  setTimeout(() => setScoreCopied(false), 2000);
+                }}
+                style={{ marginTop: '1.5rem', display: 'inline-flex', alignItems: 'center', padding: '0.5rem 1.25rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: scoreCopied ? '#16a34a' : '#374151', backgroundColor: scoreCopied ? '#f0fdf4' : 'white', cursor: 'pointer', transition: 'all 0.2s' }}
+              >
+                {scoreCopied ? '✓ Copied!' : '📋 Copy Score to Share'}
+              </button>
             </div>
           </div>
         );

@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export const Analytics: React.FC = () => {
+  const [scoreCopied, setScoreCopied] = React.useState(false);
   // Get user profile from localStorage
   const getUserProfile = () => {
     const saved = localStorage.getItem('userProfile');
@@ -138,10 +139,20 @@ export const Analytics: React.FC = () => {
                   </dl>
                 </div>
               </div>
-              <div style={{ marginTop: '1rem', backgroundColor: '#f9fafb', padding: '0.75rem 1rem', borderRadius: '0.5rem' }}>
-                <p style={{ fontSize: '0.875rem', color: '#4b5563' }}>
+              <div style={{ marginTop: '1rem', backgroundColor: '#f9fafb', padding: '0.75rem 1rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <p style={{ fontSize: '0.875rem', color: '#4b5563', margin: 0 }}>
                   <span style={{ fontWeight: '500', color: '#16a34a' }}>Great improvement!</span> You're {weeklyTrend.toLowerCase()} than last week.
                 </p>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`My Cleaning Buddy weekly health score: ${weeklyHealthScore}% (${weeklyTrend}) 🧹`);
+                    setScoreCopied(true);
+                    setTimeout(() => setScoreCopied(false), 2000);
+                  }}
+                  style={{ marginLeft: '1rem', flexShrink: 0, display: 'inline-flex', alignItems: 'center', padding: '0.375rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '500', color: scoreCopied ? '#16a34a' : '#374151', backgroundColor: scoreCopied ? '#f0fdf4' : 'white', cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                  {scoreCopied ? '✓ Copied!' : '📋 Share Score'}
+                </button>
               </div>
             </div>
           </div>
