@@ -1,29 +1,66 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const morgan = require('morgan');
+const path = require('path');
+const fs = require('fs');
+const { middleware: openapiValidator } = require('express-openapi-validator');
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
 
-// Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
-app.use(cors({
-  origin: 'http://localhost:5173', // React client URL
-  credentials: true
-}));
-app.use(express.json());
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Error: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in environment variables');
-  process.exit(1);
+let supabase;
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+} else {
+  console.warn('Warning: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY not set');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Basic middleware
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  credentials: true
+}));
+app.use(express.json());
+app.use(morgan('dev'));
+
+// Attach user if Authorization header present
+app.use(async (req, res, next) => {
+  try {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+    if (token && supabase) {
+      const { data, error } = await supabase.auth.getUser(token);
+      if (!error && data && data.user) {
+        req.user = data.user;
+      }
+    }
+  } catch (err) {
+    // Non-fatal; proceed without user
+  } finally {
+    next();
+  }
+});
+
+// Simple favicon handler to avoid noisy errors
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
+// Health route should not be blocked by OpenAPI validation
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Cleaning Buddy API is running' });
+});
+
+// OpenAPI validation (for other routes)
+const apiSpecPath = path.resolve(__dirname, '../cleaning-buddy-openapi.yaml');
+if (fs.existsSync(apiSpecPath)) {
+  app.use(openapiValidator({ apiSpec: apiSpecPath, validateRequests: true, validateResponses: false }));
+} else {
+  console.warn(`OpenAPI spec not found at ${apiSpecPath}; skipping request validation`);
+}
 
 // ==================== ENDPOINTS ====================
 
@@ -190,33 +227,23 @@ app.post('/api/quiz-responses', async (req, res) => {
   }
 });
 
-// ==================== ERROR HANDLING ====================
-
-// 404 handler for undefined routes
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+// Not found handler (let OpenAPI validator handle unknown routes too)
+app.use((req, res, next) => {
+  res.status(404).json({ error: 'NOT_FOUND', message: 'Resource not found' });
 });
 
-// Global error handler
+// Central error handler
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
+  res.status(status).json({ error: err.name || 'Error', message });
 });
 
-// ==================== START SERVER ====================
-
-// Only start server if not running in Lambda
-if (process.env.AWS_LAMBDA_FUNCTION_NAME !== 'true') {
-  app.listen(PORT, () => {
-    console.log(`API server running on http://localhost:${PORT}`);
-    console.log('Available endpoints:');
-    console.log('  GET  /api/rooms');
-    console.log('  GET  /api/task-templates/:roomId');
-    console.log('  GET  /api/cleaning-tips');
-    console.log('  GET  /api/users/:userId');
-    console.log('  POST /api/quiz-responses');
+const port = process.env.PORT || 5000;
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Cleaning Buddy API listening on http://localhost:${port}`);
   });
 }
 
-// Export Express app for Lambda deployment
 module.exports = app;
