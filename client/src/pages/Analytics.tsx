@@ -10,9 +10,44 @@ import {
 } from '@heroicons/react/24/outline';
 
 export const Analytics: React.FC = () => {
+  // Get user profile from localStorage
+  const getUserProfile = () => {
+    const saved = localStorage.getItem('userProfile');
+    return saved ? JSON.parse(saved) : {
+      dwellingType: 'House' // default
+    };
+  };
+
+  const userProfile = getUserProfile();
+  
+  // Calculate tasks based on dwelling type
+  const getTasksForDwellingType = (dwellingType: string) => {
+    const taskCounts = {
+      'Kitchen': 11,
+      'Bathroom': 7, 
+      'Bedroom': 8,
+      'Living Room': 5,
+      'Laundry': 5
+    };
+
+    switch (dwellingType) {
+      case 'Studio':
+        // Studio: Kitchen + Bathroom + Living Room (Bedroom combined with Living Room)
+        return taskCounts['Kitchen'] + taskCounts['Bathroom'] + taskCounts['Living Room'];
+      case 'Apartment':
+        // Apartment: All rooms except Laundry is optional
+        return taskCounts['Kitchen'] + taskCounts['Bathroom'] + taskCounts['Bedroom'] + taskCounts['Living Room'] + Math.floor(taskCounts['Laundry'] * 0.5);
+      case 'House':
+      default:
+        // House: All rooms
+        return taskCounts['Kitchen'] + taskCounts['Bathroom'] + taskCounts['Bedroom'] + taskCounts['Living Room'] + taskCounts['Laundry'];
+    }
+  };
+
   // Mock data - replace with actual API calls
   const weeklyHealthScore = 85;
   const weeklyTrend = '+12% from last week';
+  const tasksThisWeek = getTasksForDwellingType(userProfile.dwellingType);
   const roomStats = [
     { room: 'Kitchen', completionRate: 92, timeSpent: 45, mostMissed: false },
     { room: 'Bathroom', completionRate: 100, timeSpent: 30, mostMissed: false },
@@ -137,7 +172,7 @@ export const Analytics: React.FC = () => {
                   <div style={{ marginLeft: '1.25rem', flex: 1 }}>
                     <dl>
                       <dt style={{ fontSize: '0.875rem', fontWeight: '500', color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Tasks This Week</dt>
-                      <dd style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827' }}>124</dd>
+                      <dd style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827' }}>{tasksThisWeek}</dd>
                     </dl>
                   </div>
                 </div>

@@ -1,0 +1,350 @@
+I showed the client the current prototype. They are happy with all pages except the following notes:
+- Notification time sync (CRITICAL):
+In Settings → Notifications, the "Reminder Time" field should be removed or disabled
+Reminder time MUST default to and match the cleaning day start time (set in Profile settings)
+When user changes cleaning time in Profile, notification time should automatically update to match
+Spec says: "Notification should pop up at the time cleaning is supposed to start"
+
+- Task count accuracy:
+Verify that task counts per room match the spec exactly. Check the "Tasks This Week" field in Analytics - for a Studio dwelling, max should be ~34 tasks total (not 124)
+The seed data user "John Doe" might have a House dwelling type - verify his task counts are correct for whatever dwelling he has
+On room checklist pages (e.g., Kitchen showing "3 of 11"), make sure the denominator matches the actual number of tasks for that room
+
+-Postponement calendar picker:
+Verify the "Choose custom date" option in the Postpone Task modal opens a calendar date picker (not just a text input)
+If it's currently a text input, change it to an actual calendar UI component
+
+General spec compliance check:
+Review Specification 3 document and cross-check ALL other requirements
+Flag anything else/fix that doesn't match the spec
+
+This Cleaning Buddy app will notify users of chores that need to be completed on their cleaning
+day. When the Cleaning Buddy app is first setup, the user will pick the day they want to clean
+on, set their neat freak score, select their dwelling type, and prioritize which rooms to clean
+first. The app will be setup on a week by week basis, so as to minimize distractions from dating
+and college work.
+When the user opens an account, they will take a cleanliness quiz that will give them a neat
+freak rating out of the 5 ratings listed below:
+1. 0-20 = Minimalist Maintainer
+2. 21-40 = Casual Cleaner
+3. 41-60 = Routine Ready
+4. 61-80 = Neat Freak
+5. 81-100 = Spotless Specialist
+The questions that will be asked to determine your neat freak rating are as follows:
+How often do you want to vacuum or sweep the floors?
+How often do you want to clean the bathroom?
+How often do you want to wipe down the kitchen counters/stove?
+How often do you want to do the dishes?
+How often do you want to take the trash/recycling out?
+How quickly do clutter bother you? (i.e.: Clothes on the floor, stuff on the counters,
+trash around)
+How often do you?? Want to change the bedding?
+How often do you want to do laundry?
+Based on the above questions, your Neat Freak Title will be assigned to you.
+You will be able to prioritize which top 2 cleanings mean the most to you during initial account
+setup.
+Other priorities include how late the cleaning is and will be shown in red
+Can only change dates on what matters most by one day or one week. The client wants
+to be able to type in date at this point if necessary.
+The app will give in-app popup reminders on what needs to be completed today and push
+notification on what needs to be cleaned each week, only once(the client doesn’t want his
+calendar inundated with notifications). Reminders and Push Notifications will be setup during
+the user’s initial setup. Each user customizes their cleaning list based on their dwelling type.
+Under each room in the dwelling, there will be a checklist of cleaning tasks that need to be
+completed. All have to be completed for you to get credit for cleaning the room.
+Each Room has a designated number of tasks listed below, each room needs to have a checklist
+with boxes that can be checked off when cleaned with the items listed below for each room:
+The Kitchen will have 11 items to be completed
+• Wipe down the Counter Tops
+• Clean out the Refrigerator
+• Wipe down the Stove
+• Clean the oven
+• Wash dishes
+• Wipe down the walls
+• Sweep the floor
+• Mop the floors
+• Clean the microwave
+• Clean the cabinet out underneath the sink
+• Take the trash/recyclables out
+The Bathroom will have 7 items to be completed
+• Clean the toilet
+• Clean the bathtub/shower
+• Sweep the floor
+• Mop the floor
+• Clean the mirror
+• Clean the sink and countertop
+• Clean the cabinet out underneath the sink
+The Bedroom will have 8 items to be completed
+• Make the bed
+• Vacuum
+• Clean the window seals
+• Clean the baseboards
+• Remove dishes and debris from bedroom
+• Dust
+• Clean off dresser
+• Clean the windowsill
+The Living Room will have 5 item to be completed
+• Vacuum the floor
+• Wipe down the furniture with pledge
+• Dust
+• Discard debris from the living room (shoes, clothes, video games)
+• Clean the windowsill
+The Laundry will have 5 Items to be completed
+• Separate the clothes
+• Wash whites
+• Wash colors
+• Fold clothes
+• Put Clothes away
+You will be able to postpone cleanings either by one day or by one week. The client changed
+this and wants to be able to input a dates here, so there will be 3 options, one day, one week, or
+the user can input a date. Calendar view may work here to click on a day on the calendar.
+“This time tomorrow”
+“This time next week”
+Date Input from Calendar View.
+Based on your Cleanliness Health score you receive each week, you will be able to share your
+score with others by copying and pasting the score to your clipboard and using it when needed
+(at the user’s discretion.)
+There will be an analytics page explaining what tasks were completed and what needs to be
+worked on more.
+There will be a cleaning tips page with the following tips, use best practices from the internet on
+cleaning tips:
+Dust before sweeping
+Always clean top to bottom
+Always dry clean before wet clean
+Empty your vacuum
+Have towels on hand
+Replenish your cleaning supplies
+
+
+
+
+ERD and Schema for the Cleaning Buddy:
+
+One correction from the earlier version: user_profiles should usually relate to dwelling_types
+and cleaner_categories as many profiles to one category/type, but Mermaid ERD expresses
+that from the parent side as DWELLING_TYPES ||--o{ USER_PROFILES and
+CLEANER_CATEGORIES ||--o{ USER_PROFILES, which is what’s shown here
+
+
+Cleaning Buddy Data Modeling Narrative and Business Rules
+Overview:
+The Cleaning Buddy application is designed to help users manage and maintain household
+cleaning tasks through structured scheduling, reminders, and performance tracking. The data
+model supports a single-user system where each user configures their cleaning preferences,
+completes a one-time quiz, selects a weekly cleaning day, and tracks progress through room-
+based task completion.
+The database is designed using a relational model to ensure data integrity, reduce redundancy,
+and support scalability for features such as analytics, notifications, and progress tracking.
+The data model was designed with the following goals:
+1. Support onboarding and personalization
+o One-time cleanliness quiz
+o Dwelling type selection
+o Top two room priorities
+2. Enable structured task management
+o Predefined room-based cleaning tasks
+o Checklist-based workflow (no custom tasks)
+3. Support scheduling constraints
+o One weekly cleaning day
+o Limited postponement options (tomorrow or next week)
+4. Track progress and performance
+o Room completion logic (all tasks must be complete)
+o Weekly cleanliness health score (0–100%)
+5. Provide notifications and insights
+o Push and in-app notifications
+o Cleaning tips and analytics
+
+
+Core Entities and Their Roles
+1. Users and Profiles
+• Users represent individuals using the app.
+• User_Profiles store configuration data collected during onboarding.
+Each user:
+• Has exactly one profile
+• Selects a dwelling type
+• Chooses one cleaning day
+• Receives a neat freak score and category
+This separation ensures authentication data is isolated from user preferences.
+2. Cleaner Categories
+The Cleaner_Categories entity defines the five classification levels:
+• Minimalist Maintainer
+• Casual Cleaner
+• Routine Ready
+• Neat Freak
+• Spotless Specialist
+Each category corresponds to a score range (0–100).
+This allows:
+• Consistent classification
+• Reusable logic for messaging and analytics
+3. Quiz System
+The onboarding quiz is modeled using:
+• Quiz_Questions
+• Quiz_Answer_Options
+• User_Quiz_Responses
+This structure supports:
+• A one-time quiz per user
+• Scored answers for calculating the neat freak score
+• Flexibility to modify questions without altering schema
+Each user can only answer each question once, enforcing the “one-time quiz” requirement.
+4. Dwelling and Room Structure
+The app organizes cleaning by location:
+• Dwelling_Types (apartment, studio, house)
+• Rooms (kitchen, bathroom, bedroom, etc.)
+• Dwelling_Type_Rooms (mapping table)
+This allows:
+• Different room configurations per dwelling type
+• Scalability if new dwelling types are added
+5. Task Templates
+Cleaning tasks are predefined and stored in:
+• Task_Templates
+Each task:
+• Belongs to a room
+• Is reused across all users
+This design enforces:
+• Standardized cleaning checklists
+• No custom task creation (as required)
+6. User Priorities
+The app allows users to select two priority rooms, stored in:
+• User_Room_Priorities
+Constraints:
+• Only two priorities allowed
+• Ranked as 1 (highest) and 2
+These priorities influence:
+• Scheduling
+• Notifications
+• Analytics
+7. Scheduling and Cleaning Cycles
+Cleaning is managed weekly using:
+• Cleaning_Cycles
+Each cycle represents:
+• One week of cleaning
+• One scheduled cleaning day
+This ensures:
+• Only one cleaning day per week
+• Easy tracking of weekly performance
+8. Room Checklists and Task Instances
+To track progress:
+• Cycle_Room_Checklists represent each room in a cycle
+• Cycle_Tasks represent individual task instances
+Important rule:
+• A room is only complete if all tasks are complete
+This structure allows:
+• Accurate room-level completion tracking
+• Task-level progress monitoring
+9. Postponements ( May need to re-evaluate after this update )
+Postponement behavior is restricted using:
+• Task_Postponements
+Constraints:
+• Only two options:
+o “Tomorrow”
+o “Next week”
+o Wants to be able to input a date
+This ensures:
+• Controlled scheduling
+• Simplicity in logic / May change the logic due to date input, possible calendar pop-up
+10. Notifications
+The notification system includes:
+• Notification_Sounds
+• User_Notification_Preferences
+• Notifications
+Users can:
+• Enable push or in-app reminders
+• Select a notification sound
+The system logs all notifications sent for tracking and debugging.
+11. Weekly Health Scores
+User performance is summarized in:
+• Weekly_Health_Scores
+This table calculates:
+• Percentage of completed tasks/rooms
+• Score between 0–100%
+• Associated feedback message
+Each cleaning cycle produces exactly one health score.
+12. Sharing and Analytics
+Additional support features include:
+• Score_Shares
+o Allows users to copy/share scores (no social media integration)
+• Analytics_Snapshots
+o Stores aggregated performance data
+o Identifies problem areas (e.g., most missed room)
+13. Cleaning Tips
+• Cleaning_Tips provides static best practices such as:
+o Clean top to bottom
+o Dust before sweeping
+This table supports:
+• Simple content delivery
+• Easy updates without code changes
+Key Relationships and Cardinality
+Some important relationships include:
+• One user → one profile (1:1)
+• One user → many cleaning cycles (1:M)
+• One cycle → many rooms (1:M)
+• One room → many tasks (1:M)
+• One cycle → one health score (1:1)
+These relationships enforce:
+• Data consistency
+• Logical flow of cleaning activities
+Constraints and Business Rules
+The data model enforces key application rules:
+• Only one quiz attempt per user
+• Only one cleaning day per week
+• Only two priority rooms
+• Only two postponement options
+• Tasks must be completed to mark a room complete
+• The app is single-user only (no shared households)
+Normalization and Integrity
+The schema is normalized to approximately Third Normal Form (3NF):
+• No repeating groups
+• No partial dependencies
+• No transitive dependencies
+Benefits:
+• Reduced redundancy
+• Improved consistency
+• Easier maintenance
+Conclusion
+The Cleaning Buddy data model is designed to align closely with the app’s functional
+requirements while maintaining a clean, scalable, and normalized structure. It supports the full
+lifecycle of the user experience:
+1. Onboarding → Quiz → Profile setup
+2. Task generation → Scheduling → Notifications
+3. Task completion → Room completion → Weekly scoring
+4. Insights → Analytics → Sharing
+This structure ensures that the application remains simple for users while being robust enough
+to support future enhancements.
+Navigation Plan:
+The User enters the application by creating an account, with their first and last name and an
+email address and password. During their first login, they have to take a Cleanliness Quiz that
+will give them a cleaning title and score. Once they are given their cleaning title, then they pick
+their dwelling type. After the dwelling type, them they prioritize their two rooms that are most
+important to them. After prioritizing the rooms, then they are asked select a cleaning day and
+time. Then they are asked to set up their notification time of when they should be reminded to
+start cleaning on their cleaning day. Once that is completed then they are taken to the Cleaning
+Buddy dashboard. Where they can see what there cleaning title is, their cleaning day and time,
+what view they want to see(cleaning tasks or view the schedule), and at the bottom of the
+screen there will be upcoming tasks to be completed. One you click on My tasks, you will get a
+screen with all rooms in your dwelling type. Each room will have a box display that can be
+clicked on to see what exactly needs to be completed in that room, with checkmark boxes to fill
+in. Along with that there will be a weekly summary strip at the bottom of the screen, that will
+give the user information on how many tasks they completed, how many tasks they had, the
+percentage of tasks they completed, and how many rooms they totally completed. There will
+be a quick add task at the top of the page if a task was left out of the list. Once you click on the
+room you want to see, you will be given a screen with each that needs to be completed in that
+room (along with buttons at the top of the screen that will move you from room to room in your
+dwelling). Also on the list page or each room, you will have buttons to get back to the
+dashboard, My Tasks, Checklists, Analytics, Tips, and Settings screens. Within the Tasks
+Checklist you will have the opportunity to postpone a task, with today, next week, or enter a
+date. On the Analytics screen, you have are given a weekly health score, how many weeks you
+have been using the app, total number of tasks for the week, what percentage by room you
+have completed, and monthly trends by week. You also have access to the other parts of the
+app with buttons at the top of the screen. You get to the tips page by accessing the tipsbutton
+at the top of the page, as well as, accessing your profile and notification settings by accessing
+the settings button at the top of the page. You can also access the Help section using the button
+at the top of the screen. That is how you navigate throughout the Cleaning Buddy app
+
+
+Authentication Flow:
+This is an Example:
+Unregistered Users cannot access public pages
+Only registered users can setup dwelling types and set preferences.
+If unregistered user tries to login, redirect them to create an account.
+Enter email: receive and enter OTP: redirect to profile.
+Once registered, access granted to setup account and take cleanliness quiz, select dwelling type.
+Authentication persists across sessions.

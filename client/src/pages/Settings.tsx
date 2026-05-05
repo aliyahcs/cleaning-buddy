@@ -294,21 +294,12 @@ export const Settings: React.FC = () => {
                       <ClockIcon style={{ height: '1.5rem', width: '1.5rem', color: '#9ca3af', marginRight: '0.75rem' }} />
                       <div>
                         <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827' }}>Reminder Time</h3>
-                        <p style={{ fontSize: '0.875rem', color: '#4b5563' }}>Default reminder time for notifications</p>
+                        <p style={{ fontSize: '0.875rem', color: '#4b5563' }}>Notifications are sent at your cleaning start time</p>
                       </div>
                     </div>
-                    <input
-                      type="time"
-                      value={userProfile.notifications.reminderTime}
-                      onChange={(e) => setUserProfile({
-                        ...userProfile,
-                        notifications: {
-                          ...userProfile.notifications,
-                          reminderTime: e.target.value
-                        }
-                      })}
-                      style={{ display: 'block', width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.875rem', outline: 'none' }}
-                    />
+                    <div style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 0.75rem', backgroundColor: '#f3f4f6', borderRadius: '0.375rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                      {userProfile.cleaningTime}
+                    </div>
                   </div>
                 </div>
 

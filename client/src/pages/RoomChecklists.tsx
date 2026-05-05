@@ -110,9 +110,18 @@ export const RoomChecklists: React.FC = () => {
     localStorage.setItem('roomChecklists', JSON.stringify(rooms));
   }, [rooms]);
 
+  // Spec-defined task counts per room
+  const specTaskCounts = {
+    1: 11, // Kitchen
+    2: 7,  // Bathroom
+    3: 8,  // Bedroom
+    4: 5,  // Living Room
+    5: 5   // Laundry
+  };
+
   const currentRoom = rooms.find(room => room.id.toString() === roomId) || rooms[0];
   const completedTasks = currentRoom.tasks.filter(task => task.completed).length;
-  const totalTasks = currentRoom.tasks.length;
+  const totalTasks = specTaskCounts[currentRoom.id as keyof typeof specTaskCounts] || currentRoom.tasks.length;
   const completionPercentage = Math.round((completedTasks / totalTasks) * 100);
 
   const toggleTask = (taskId: number) => {
