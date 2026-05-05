@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { LandingPage } from './pages/LandingPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { RegisterPage } from './pages/RegisterPage.tsx';
+import { OTPVerificationPage } from './pages/OTPVerificationPage.tsx';
 import { PasswordResetPage } from './pages/PasswordResetPage.tsx';
 import { InitialSetupFlow } from './pages/InitialSetupFlow.tsx';
 import { Dashboard } from './pages/Dashboard.tsx';
@@ -20,6 +21,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/otp-verification" element={<OTPVerificationPage />} />
           <Route path="/reset-password" element={<PasswordResetPage />} />
           <Route path="/setup" element={<InitialSetupFlow />} />
           <Route path="/dashboard" element={<Dashboard />} />

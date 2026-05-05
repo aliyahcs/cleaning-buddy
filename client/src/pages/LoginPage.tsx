@@ -47,9 +47,10 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
     
     // Mock login - replace with actual API call
+    // For now, just redirect to OTP verification
     setTimeout(() => {
       setIsLoading(false);
-      navigate('/dashboard');
+      navigate(`/otp-verification?email=${encodeURIComponent(formData.email)}`);
     }, 1000);
   };
 

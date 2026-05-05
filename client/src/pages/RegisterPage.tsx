@@ -75,7 +75,7 @@ export const RegisterPage: React.FC = () => {
     // Mock registration - replace with actual API call
     setTimeout(() => {
       setIsLoading(false);
-      navigate('/setup');
+      navigate(`/otp-verification?email=${encodeURIComponent(formData.email)}`);
     }, 1000);
   };
 
