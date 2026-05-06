@@ -9,9 +9,9 @@ import {
 import { supabase } from '../lib/supabase';
 
 const TASKS_BY_DWELLING: Record<number, number> = {
-  1: 31, // Apartment: Kitchen + Bathroom + Bedroom + Living Room
-  2: 36, // House: all 5 rooms
-  3: 23, // Studio: Kitchen + Bathroom + Living Room
+  1: 36,
+  2: 36,
+  3: 36,
 };
 
 export const Analytics: React.FC = () => {

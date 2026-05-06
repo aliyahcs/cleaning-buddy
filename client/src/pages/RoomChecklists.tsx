@@ -24,9 +24,9 @@ interface Room {
 }
 
 const DWELLING_ROOMS: Record<number, number[]> = {
-  1: [1, 2, 3, 4],
+  1: [1, 2, 3, 4, 5],
   2: [1, 2, 3, 4, 5],
-  3: [1, 2, 4],
+  3: [1, 2, 3, 4, 5],
 };
 
 export const RoomChecklists: React.FC = () => {

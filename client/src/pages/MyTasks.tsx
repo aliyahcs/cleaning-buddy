@@ -10,9 +10,9 @@ import { supabase } from '../lib/supabase';
 
 // Room IDs per dwelling type — matches DB dwelling_type_rooms seed
 const DWELLING_ROOMS: Record<number, number[]> = {
-  1: [1, 2, 3, 4],    // Apartment
-  2: [1, 2, 3, 4, 5], // House
-  3: [1, 2, 4],        // Studio
+  1: [1, 2, 3, 4, 5],
+  2: [1, 2, 3, 4, 5],
+  3: [1, 2, 3, 4, 5],
 };
 
 export const MyTasks: React.FC = () => {

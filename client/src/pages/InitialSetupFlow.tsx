@@ -108,9 +108,9 @@ const quizQuestions: QuizQuestion[] = [
 
 // IDs match the DB: Apartment=1, House=2, Studio=3
 const dwellingTypes = [
-  { id: 1, name: 'Apartment', description: 'Multi-unit dwelling — Kitchen, Bathroom, Bedroom, Living Room', roomIds: [1, 2, 3, 4] },
-  { id: 2, name: 'House',     description: 'Single-family home — all 5 rooms including Laundry',           roomIds: [1, 2, 3, 4, 5] },
-  { id: 3, name: 'Studio',    description: 'Open-plan space — Kitchen, Bathroom, Living Room',             roomIds: [1, 2, 4] },
+  { id: 1, name: 'Apartment', description: 'Multi-unit dwelling', roomIds: [1, 2, 3, 4, 5] },
+  { id: 2, name: 'House',     description: 'Single-family home',  roomIds: [1, 2, 3, 4, 5] },
+  { id: 3, name: 'Studio',    description: 'Open-plan space',     roomIds: [1, 2, 3, 4, 5] },
 ];
 
 const rooms = [
