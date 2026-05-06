@@ -40,6 +40,7 @@ export const RoomChecklists: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [allowedRoomIds, setAllowedRoomIds] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Default rooms data structure
   const defaultRooms: Room[] = [
@@ -62,13 +63,16 @@ export const RoomChecklists: React.FC = () => {
     const fetchTasks = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        const [{ data: templates, error: templatesError }, { data: profileData }] = await Promise.all([
+        if (user) setUserId(user.id);
+        const [{ data: templates, error: templatesError }, { data: profileData }, { data: completionsData }] = await Promise.all([
           supabase.from('task_templates').select('*').eq('is_active', true).order('display_order'),
           user ? supabase.from('user_profiles').select('dwelling_type_id').eq('user_id', user.id).single() : Promise.resolve({ data: null }),
+          user ? supabase.from('user_task_completions').select('task_template_id').eq('user_id', user.id) : Promise.resolve({ data: [] }),
         ]);
         if (templatesError) throw templatesError;
         const dwellingId: number = (profileData as any)?.dwelling_type_id ?? 2;
         setAllowedRoomIds(DWELLING_ROOMS[dwellingId] ?? [1, 2, 3, 4, 5]);
+        const completedIds = new Set((completionsData || []).map((c: any) => c.task_template_id));
 
         setRooms(prevRooms => {
           const updated = prevRooms.map(room => {
@@ -79,7 +83,7 @@ export const RoomChecklists: React.FC = () => {
                 return {
                   id: t.task_template_id,
                   name: t.task_name,
-                  completed: existing?.completed ?? false,
+                  completed: completedIds.has(t.task_template_id),
                   postponed: existing?.postponed ?? false,
                   isOverdue: existing?.isOverdue ?? false,
                   dueDate: existing?.dueDate ?? 'Tomorrow, 9:00 AM'
@@ -129,31 +133,32 @@ export const RoomChecklists: React.FC = () => {
     }
   }, [rooms, loading]);
 
-  // Spec-defined task counts per room
-  const specTaskCounts = {
-    1: 11, // Kitchen
-    2: 7,  // Bathroom
-    3: 8,  // Bedroom
-    4: 5,  // Living Room
-    5: 5   // Laundry
-  };
-
   const displayRooms = rooms.filter(r => allowedRoomIds.includes(r.id));
   const currentRoom = (roomId ? displayRooms.find(room => room.id.toString() === roomId) : null) || displayRooms[0] || rooms[0];
   const completedTasks = currentRoom.tasks.filter(task => task.completed).length;
-  const totalTasks = specTaskCounts[currentRoom.id as keyof typeof specTaskCounts] || currentRoom.tasks.length;
-  const completionPercentage = Math.round((completedTasks / totalTasks) * 100);
+  const totalTasks = currentRoom.tasks.length;
+  const completionPercentage = totalTasks > 0 ? Math.min(Math.round((completedTasks / totalTasks) * 100), 100) : 0;
 
   const toggleTask = (taskId: number) => {
+    const isTemplateTask = taskId < 1_000_000_000_000;
+    const task = currentRoom.tasks.find(t => t.id === taskId);
+    const willBeCompleted = !task?.completed;
+
+    if (isTemplateTask && userId) {
+      if (willBeCompleted) {
+        supabase.from('user_task_completions').upsert({ user_id: userId, task_template_id: taskId }).then(() => {});
+      } else {
+        supabase.from('user_task_completions').delete().eq('user_id', userId).eq('task_template_id', taskId).then(() => {});
+      }
+    }
+
     setRooms(prevRooms => {
       return prevRooms.map(room => {
         if (room.id === currentRoom.id) {
           return {
             ...room,
-            tasks: room.tasks.map(task => 
-              task.id === taskId 
-                ? { ...task, completed: !task.completed }
-                : task
+            tasks: room.tasks.map(t =>
+              t.id === taskId ? { ...t, completed: !t.completed } : t
             )
           };
         }

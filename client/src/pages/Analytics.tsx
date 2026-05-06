@@ -18,6 +18,7 @@ export const Analytics: React.FC = () => {
   const [scoreCopied, setScoreCopied] = useState(false);
   const [weeklyHealthScore, setWeeklyHealthScore] = useState<number | null>(null);
   const [totalTasks, setTotalTasks] = useState(36);
+  const [roomStats, setRoomStats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,6 +33,23 @@ export const Analytics: React.FC = () => {
           .single();
         setWeeklyHealthScore(profile?.neat_freak_score ?? null);
         setTotalTasks(TASKS_BY_DWELLING[profile?.dwelling_type_id ?? 2] ?? 36);
+
+        try {
+          const saved = localStorage.getItem('roomChecklists');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            setRoomStats(
+              parsed
+                .filter((r: any) => r.tasks.length > 0)
+                .map((r: any) => ({
+                  name: r.name,
+                  icon: r.icon,
+                  completed: r.tasks.filter((t: any) => t.completed).length,
+                  total: r.tasks.length,
+                }))
+            );
+          }
+        } catch (e) {}
       } catch (err) {
         console.error('Failed to load analytics:', err);
       } finally {
@@ -164,11 +182,37 @@ export const Analytics: React.FC = () => {
         <div style={{ marginTop: '2rem' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>Room Performance</h2>
           <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
-            <div style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
-              <ChartBarIcon style={{ height: '2.5rem', width: '2.5rem', color: '#d1d5db', margin: '0 auto 1rem' }} />
-              <p style={{ fontSize: '0.875rem', fontWeight: '500', color: '#6b7280' }}>No history yet</p>
-              <p style={{ fontSize: '0.875rem', color: '#9ca3af', marginTop: '0.25rem' }}>Complete your first cleaning session to see room stats here.</p>
-            </div>
+            {roomStats.length === 0 ? (
+              <div style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
+                <ChartBarIcon style={{ height: '2.5rem', width: '2.5rem', color: '#d1d5db', margin: '0 auto 1rem' }} />
+                <p style={{ fontSize: '0.875rem', fontWeight: '500', color: '#6b7280' }}>No history yet</p>
+                <p style={{ fontSize: '0.875rem', color: '#9ca3af', marginTop: '0.25rem' }}>Visit your checklists and start marking tasks complete to see stats here.</p>
+              </div>
+            ) : (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {roomStats.map((room) => {
+                  const pct = room.total > 0 ? Math.min(Math.round((room.completed / room.total) * 100), 100) : 0;
+                  const isComplete = pct === 100;
+                  return (
+                    <li key={room.name} style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontSize: '1.25rem' }}>{room.icon}</span>
+                          <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#111827' }}>{room.name}</span>
+                          {isComplete && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.125rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '600', backgroundColor: '#dcfce7', color: '#16a34a' }}>✓ Complete</span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>{room.completed}/{room.total}</span>
+                      </div>
+                      <div style={{ width: '100%', backgroundColor: '#e5e7eb', borderRadius: '9999px', height: '0.5rem' }}>
+                        <div style={{ backgroundColor: isComplete ? '#22c55e' : '#2563eb', height: '0.5rem', borderRadius: '9999px', width: `${pct}%`, transition: 'width 0.3s ease' }} />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         </div>
 

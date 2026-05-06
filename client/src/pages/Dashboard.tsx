@@ -34,12 +34,32 @@ export const Dashboard: React.FC = () => {
         const iconMap: Record<string, string> = { 'kitchen': '🍳', 'bathroom': '🚿', 'bedroom': '🛏', 'living room': '🛋', 'laundry': '🧺' };
         const roomNameMap: Record<number, string> = {};
         (roomsRes.data || []).forEach((r: any) => { roomNameMap[r.room_id] = r.name; });
-        setPriorityRooms((priorityRes.data || []).map((p: any) => ({
-          roomId: p.room_id,
-          rank: p.priority_rank,
-          name: roomNameMap[p.room_id] || 'Unknown',
-          icon: iconMap[(roomNameMap[p.room_id] || '').toLowerCase()] || '🏠',
-        })));
+
+        let completionByName: Record<string, { completed: number; total: number }> = {};
+        try {
+          const saved = localStorage.getItem('roomChecklists');
+          if (saved) {
+            JSON.parse(saved).forEach((r: any) => {
+              completionByName[r.name.toLowerCase()] = {
+                completed: r.tasks.filter((t: any) => t.completed).length,
+                total: r.tasks.length,
+              };
+            });
+          }
+        } catch (e) {}
+
+        setPriorityRooms((priorityRes.data || []).map((p: any) => {
+          const name = roomNameMap[p.room_id] || 'Unknown';
+          const stats = completionByName[name.toLowerCase()] ?? { completed: 0, total: 0 };
+          return {
+            roomId: p.room_id,
+            rank: p.priority_rank,
+            name,
+            icon: iconMap[name.toLowerCase()] || '🏠',
+            completed: stats.completed,
+            total: stats.total,
+          };
+        }));
 
         setUserData({ ...userRes.data, profile: profileRes.data });
       } catch (err) {
@@ -269,13 +289,21 @@ export const Dashboard: React.FC = () => {
                       <span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>{room.icon}</span>
                       <div>
                         <p style={{ fontSize: '0.875rem', fontWeight: '500', color: '#111827' }}>{room.name}</p>
-                        <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>Flagged as high priority</p>
+                        <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                          {room.total > 0 ? `${room.completed}/${room.total} tasks complete` : 'Flagged as high priority'}
+                        </p>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.25rem 0.625rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '600', backgroundColor: room.rank === 1 ? '#fee2e2' : '#fef9c3', color: room.rank === 1 ? '#dc2626' : '#92400e' }}>
-                        ★ Priority {room.rank}
-                      </span>
+                      {room.total > 0 && room.completed === room.total ? (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.25rem 0.625rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '600', backgroundColor: '#dcfce7', color: '#16a34a' }}>
+                          ✓ Done
+                        </span>
+                      ) : (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.25rem 0.625rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '600', backgroundColor: room.rank === 1 ? '#fee2e2' : '#fef9c3', color: room.rank === 1 ? '#dc2626' : '#92400e' }}>
+                          ★ Priority {room.rank}
+                        </span>
+                      )}
                       <Link to={`/room-checklists?room=${room.roomId}`} style={{ padding: '0.375rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '500', color: '#374151', textDecoration: 'none', backgroundColor: 'white' }}>
                         View Tasks
                       </Link>
