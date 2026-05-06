@@ -44,7 +44,7 @@ export const Settings: React.FC = () => {
 
         const [userRes, profileRes, roomsRes, notifRes] = await Promise.all([
           supabase.from('users').select('first_name, last_name').eq('user_id', user.id).single(),
-          supabase.from('user_profiles').select('selected_cleaning_weekday, selected_cleaning_time, neat_freak_score, dwelling_types(name), cleaner_categories(name)').eq('user_id', user.id).single(),
+          supabase.from('user_profiles').select('selected_cleaning_weekday, selected_cleaning_time, neat_freak_score, dwelling_type_id, cleaner_categories(name)').eq('user_id', user.id).single(),
           supabase.from('user_room_priorities').select('rooms(name)').eq('user_id', user.id).order('priority_rank'),
           supabase.from('user_notification_preferences').select('enable_push, enable_in_app').eq('user_id', user.id).single(),
         ]);
@@ -58,7 +58,7 @@ export const Settings: React.FC = () => {
           email: user.email || '',
           cleaningDay: p?.selected_cleaning_weekday != null ? dayNames[p.selected_cleaning_weekday] : 'Saturday',
           cleaningTime: p?.selected_cleaning_time ? p.selected_cleaning_time.slice(0, 5) : '09:00',
-          dwellingType: (p?.dwelling_types as any)?.name || '',
+          dwellingType: ({ 1: 'Apartment', 2: 'House', 3: 'Studio' } as Record<number, string>)[p?.dwelling_type_id] || 'Apartment',
           neatFreakScore: p?.neat_freak_score || 0,
           neatFreakCategory: (p?.cleaner_categories as any)?.name || '',
           priorityRooms: roomNames,

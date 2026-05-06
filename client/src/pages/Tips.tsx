@@ -1,82 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  BookmarkIcon,
-  MagnifyingGlassIcon,
-  XMarkIcon
-} from '@heroicons/react/24/outline';
-import { supabase } from '../lib/supabase';
+import { XMarkIcon } from '@heroicons/react/24/outline';
+
+const TIPS = [
+  { id: 1, category: 'kitchen', icon: '🍳', title: 'Clean As You Cook', content: 'Wipe spills immediately to prevent them from hardening. Keep a damp cloth nearby while cooking and your post-meal cleanup takes half the time.' },
+  { id: 2, category: 'kitchen', icon: '🍋', title: 'Steam-Clean Your Microwave', content: 'Heat a bowl of water with a few lemon slices for 5 minutes. The steam loosens grime so you can wipe it away effortlessly — no scrubbing, no harsh chemicals.' },
+  { id: 3, category: 'kitchen', icon: '🔥', title: 'Degrease Stovetop Monthly', content: 'Remove burner grates and soak them in hot soapy water for 30 minutes. This makes degreasing effortless and avoids the need for harsh oven cleaners.' },
+  { id: 4, category: 'kitchen', icon: '❄️', title: 'Wipe the Fridge Weekly', content: 'A quick wipe of fridge shelves and the door seal every week prevents odors and mold from taking hold. A damp cloth with baking soda neutralizes smells fast.' },
+  { id: 5, category: 'kitchen', icon: '🫧', title: 'Deep-Clean Your Dishwasher', content: 'Once a month, run an empty cycle with a cup of white vinegar in the bottom rack. It removes grease buildup and eliminates musty odors from the machine.' },
+  { id: 6, category: 'bathroom', icon: '🚿', title: 'Use a Daily Shower Spray', content: 'After each shower, spray walls with a mix of water, white vinegar, and a drop of dish soap. It prevents soap scum from forming between deep cleans.' },
+  { id: 7, category: 'bathroom', icon: '🪥', title: 'Scrub Grout With a Toothbrush', content: 'An old toothbrush dipped in baking soda paste is the most effective grout cleaner you can use. Work it into the lines before your monthly deep clean.' },
+  { id: 8, category: 'bathroom', icon: '💧', title: 'Squeegee Your Shower Glass', content: 'Taking 20 seconds to squeegee the glass after each use nearly eliminates water spots and mineral deposits, cutting your deep-clean frequency in half.' },
+  { id: 9, category: 'bathroom', icon: '🪣', title: 'Sanitize Your Toilet Brush', content: 'Once a month, soak your toilet brush and holder in diluted bleach solution for 30 minutes, then rinse. It prevents bacteria from spreading each time you clean.' },
+  { id: 10, category: 'bedroom', icon: '🛏', title: 'Wash Pillowcases Every Week', content: 'Pillowcases collect more oils and bacteria than any other bedding. Weekly washing noticeably reduces morning allergies and skin breakouts.' },
+  { id: 11, category: 'bedroom', icon: '🔄', title: 'Rotate Your Mattress Seasonally', content: 'Rotating your mattress 180 degrees every 3 months evens out wear and prevents body impressions from forming, significantly extending its lifespan.' },
+  { id: 12, category: 'bedroom', icon: '🪟', title: 'Always Dust Top-Down', content: 'Dust ceiling fan blades, blinds, and shelves before you vacuum the floor. Dust falls — if you vacuum first, you\'ll just have to do it again.' },
+  { id: 13, category: 'living-room', icon: '🛋', title: 'Vacuum Upholstery Weekly', content: 'Use your vacuum\'s upholstery attachment on sofas and chairs weekly. It removes dust and pet hair before they work their way deep into the fabric.' },
+  { id: 14, category: 'living-room', icon: '📺', title: 'Microfiber Cloth for Electronics', content: 'Only use a dry microfiber cloth on screens and electronics. It attracts dust electrostatically without scratching surfaces or leaving streaks.' },
+  { id: 15, category: 'living-room', icon: '🧹', title: 'Treat Carpet Stains Immediately', content: 'Blot fresh stains with cold water — never rub, as that spreads the stain. Acting within the first few minutes prevents permanent setting.' },
+  { id: 16, category: 'laundry', icon: '🧺', title: 'Clean the Washing Machine Monthly', content: 'Run an empty hot cycle with two cups of white vinegar to dissolve detergent buildup and kill mildew. Your clothes will smell noticeably fresher.' },
+  { id: 17, category: 'laundry', icon: '👕', title: 'Sort by Fabric, Not Just Color', content: 'Washing heavy items like jeans with lightweight fabrics causes friction that pills and damages delicate pieces. Separate by weight to extend garment life.' },
+  { id: 18, category: 'laundry', icon: '🚪', title: 'Leave the Washer Door Open', content: 'After every load, leave the washer door ajar for at least 30 minutes so the drum and seal can dry out. This is the main way to prevent musty smells.' },
+  { id: 19, category: 'general', icon: '➡️', title: 'Clean Top-Down, Left to Right', content: 'Work from ceiling to floor, left to right in every room. Falling dust always gets cleaned up on the next pass — you never re-clean an area you\'ve already done.' },
+  { id: 20, category: 'general', icon: '🧴', title: 'Use a Cleaning Caddy', content: 'Keeping all your supplies in one portable caddy means one trip to set up, no walking back and forth between rooms. It cuts dead time out of your cleaning session.' },
+  { id: 21, category: 'general', icon: '⏱️', title: 'The 2-Minute Rule', content: 'If a cleaning task takes less than 2 minutes — wiping a surface, spraying a mirror — do it immediately. These quick wins prevent buildup from ever getting serious.' },
+];
+
+const CATEGORY_LABELS: Record<string, string> = {
+  kitchen: 'Kitchen',
+  bathroom: 'Bathroom',
+  bedroom: 'Bedroom',
+  'living-room': 'Living Room',
+  laundry: 'Laundry',
+  general: 'General',
+};
+
+const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
+  kitchen: { bg: '#fef9c3', text: '#854d0e' },
+  bathroom: { bg: '#dbeafe', text: '#1e40af' },
+  bedroom: { bg: '#f3e8ff', text: '#6b21a8' },
+  'living-room': { bg: '#dcfce7', text: '#166534' },
+  laundry: { bg: '#ffedd5', text: '#9a3412' },
+  general: { bg: '#f1f5f9', text: '#475569' },
+};
 
 export const Tips: React.FC = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [selectedTip, setSelectedTip] = useState<any>(null);
   const [selectedRoom, setSelectedRoom] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [cleaningTips, setCleaningTips] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchTips = async () => {
-      try {
-        const { data: tips, error: tipsError } = await supabase
-          .from('cleaning_tips')
-          .select('*')
-          .eq('is_active', true)
-          .order('display_order');
-        if (tipsError) throw tipsError;
-
-        setCleaningTips(tips.map((tip: any) => ({
-          id: tip.tip_id,
-          category: 'general',
-          title: tip.title,
-          content: tip.tip_text,
-          icon: '💡'
-        })));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTips();
-  }, []);
-
-  const categories = [
-    { id: 'all', name: 'All Tips', icon: '📚' },
-    { id: 'general', name: 'General', icon: '🧹' },
-    { id: 'kitchen', name: 'Kitchen', icon: '🍳' },
-    { id: 'bathroom', name: 'Bathroom', icon: '🚿' },
-    { id: 'bedroom', name: 'Bedroom', icon: '🛏' },
-    { id: 'living-room', name: 'Living Room', icon: '🛋' },
-    { id: 'laundry', name: 'Laundry', icon: '🧺' }
-  ];
-
-  const filteredTips = cleaningTips.filter(tip => {
-    const matchesSearch = tip.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tip.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || tip.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: '1.125rem', color: '#6b7280' }}>Loading...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: '1.125rem', color: '#dc2626' }}>Error: {error}</div>
-      </div>
-    );
-  }
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
@@ -102,67 +74,44 @@ export const Tips: React.FC = () => {
           </div>
         </div>
       </header>
+
       <main style={{ maxWidth: '80rem', margin: '0 auto', padding: '1.5rem' }}>
         <div style={{ marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#111827', marginBottom: '0.5rem' }}>Cleaning Tips</h1>
           <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Expert advice to make your cleaning more efficient and effective</p>
         </div>
-        <div style={{ marginBottom: '1.5rem', backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
-          <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ position: 'relative' }}>
-                <div style={{ position: 'absolute', top: '50%', left: '0.75rem', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
-                  <MagnifyingGlassIcon style={{ height: '1rem', width: '1rem', color: '#9ca3af' }} />
-                </div>
-                <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search tips..." style={{ display: 'block', width: '100%', paddingLeft: '2.25rem', paddingRight: '0.75rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', color: '#6b7280', fontSize: '0.875rem', outline: 'none' }} />
-              </div>
-            </div>
-            <div style={{ width: '16rem' }}>
-              <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} style={{ display: 'block', width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', backgroundColor: 'white', fontSize: '0.875rem', outline: 'none' }}>
-                {categories.map(category => (
-                  <option key={category.id} value={category.id}>{category.icon} {category.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
-          {filteredTips.map((tip) => (
-            <div key={tip.id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
-              <div style={{ padding: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>{tip.icon}</span>
+
+        <div className="cb-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+          {TIPS.map((tip) => {
+            const colors = CATEGORY_COLORS[tip.category] || CATEGORY_COLORS.general;
+            return (
+              <div key={tip.id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
+                <div style={{ padding: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <span style={{ fontSize: '1.5rem', marginRight: '0.75rem', flexShrink: 0 }}>{tip.icon}</span>
                     <div>
-                      <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827' }}>{tip.title}</h3>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.25rem 0.625rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: '#dbeafe', color: '#1e40af' }}>{tip.category.replace('-', ' ')}</span>
+                      <h3 style={{ fontSize: '1rem', fontWeight: '600', color: '#111827', marginBottom: '0.375rem' }}>{tip.title}</h3>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.125rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: colors.bg, color: colors.text }}>
+                        {CATEGORY_LABELS[tip.category]}
+                      </span>
                     </div>
                   </div>
-                  <button style={{ color: '#9ca3af', backgroundColor: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }}>
-                    <BookmarkIcon style={{ height: '1rem', width: '1rem' }} />
-                  </button>
-                </div>
-                <p style={{ color: '#4b5563', fontSize: '0.875rem', lineHeight: '1.625' }}>{tip.content}</p>
-                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb' }}>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button onClick={() => { setSelectedTip(tip); setShowAddTaskModal(true); }} style={{ display: 'inline-flex', alignItems: 'center', padding: '0.5rem 0.75rem', border: 'none', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: 'white', backgroundColor: '#2563eb', cursor: 'pointer' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}>
+                  <p style={{ color: '#4b5563', fontSize: '0.875rem', lineHeight: '1.625' }}>{tip.content}</p>
+                  <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={() => { setSelectedTip(tip); setShowAddTaskModal(true); }}
+                      style={{ display: 'inline-flex', alignItems: 'center', padding: '0.5rem 0.75rem', border: 'none', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: 'white', backgroundColor: '#2563eb', cursor: 'pointer' }}
+                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                    >
                       Apply to Tasks
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
-        {filteredTips.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
-            <div style={{ color: '#9ca3af', marginBottom: '1rem' }}>
-              <MagnifyingGlassIcon style={{ height: '2rem', width: '2rem', margin: '0 auto' }} />
-            </div>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827', marginBottom: '0.5rem' }}>No tips found</h3>
-            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Try adjusting your search terms or category filter to find relevant cleaning tips.</p>
-          </div>
-        )}
       </main>
 
       {showAddTaskModal && selectedTip && (
@@ -204,14 +153,13 @@ export const Tips: React.FC = () => {
                 <button onClick={() => setShowAddTaskModal(false)} style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: '#374151', backgroundColor: 'white', cursor: 'pointer' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}>
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={() => {
-                    // Navigate to room-checklists with task in URL params
                     navigate(`/room-checklists?room=${selectedRoom}&newTask=${encodeURIComponent(selectedTip.title)}`);
                     setShowAddTaskModal(false);
                   }}
-                  style={{ padding: '0.5rem 1rem', border: 'none', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: 'white', backgroundColor: '#2563eb', cursor: 'pointer' }} 
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} 
+                  style={{ padding: '0.5rem 1rem', border: 'none', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: 'white', backgroundColor: '#2563eb', cursor: 'pointer' }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
                   onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
                 >
                   Add Task
