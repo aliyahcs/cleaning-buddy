@@ -43,7 +43,13 @@ export const RoomChecklists: React.FC = () => {
     { id: 5, name: 'Laundry', icon: '🧺', tasks: [] }
   ];
 
-  const [rooms, setRooms] = useState<Room[]>(defaultRooms);
+  const [rooms, setRooms] = useState<Room[]>(() => {
+    try {
+      const saved = localStorage.getItem('roomChecklists');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return defaultRooms;
+  });
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -55,39 +61,49 @@ export const RoomChecklists: React.FC = () => {
           .order('display_order');
         if (templatesError) throw templatesError;
 
-        setRooms(prevRooms => prevRooms.map(room => ({
-          ...room,
-          tasks: templates!
-            .filter((t: any) => t.room_id === room.id)
-            .map((t: any) => ({
-              id: t.task_template_id,
-              name: t.task_name,
+        setRooms(prevRooms => {
+          const updated = prevRooms.map(room => {
+            const templateTasks = templates!
+              .filter((t: any) => t.room_id === room.id)
+              .map((t: any) => {
+                const existing = room.tasks.find(et => et.id === t.task_template_id);
+                return {
+                  id: t.task_template_id,
+                  name: t.task_name,
+                  completed: existing?.completed ?? false,
+                  postponed: existing?.postponed ?? false,
+                  isOverdue: existing?.isOverdue ?? false,
+                  dueDate: existing?.dueDate ?? 'Tomorrow, 9:00 AM'
+                };
+              });
+            // Preserve quick-added tasks (ids not in templates)
+            const templateIds = new Set(templates!.map((t: any) => t.task_template_id));
+            const customTasks = room.tasks.filter(et => !templateIds.has(et.id));
+            return { ...room, tasks: [...templateTasks, ...customTasks] };
+          });
+
+          const newTask = searchParams.get('newTask');
+          const targetRoomId = roomId;
+          if (newTask && targetRoomId) {
+            const newTaskObj: Task = {
+              id: Date.now(),
+              name: decodeURIComponent(newTask),
               completed: false,
               postponed: false,
               isOverdue: false,
               dueDate: 'Tomorrow, 9:00 AM'
-            }))
-        })));
-
-        const newTask = searchParams.get('newTask');
-        if (newTask && roomId) {
-          const newTaskObj = {
-            id: Date.now(),
-            name: decodeURIComponent(newTask),
-            completed: false,
-            postponed: false,
-            isOverdue: false,
-            dueDate: 'Tomorrow, 9:00 AM'
-          };
-          setRooms(prevRooms => prevRooms.map(room =>
-            room.id.toString() === roomId
-              ? { ...room, tasks: [...room.tasks, newTaskObj] }
-              : room
-          ));
-          const newUrl = new URL(window.location.href);
-          newUrl.searchParams.delete('newTask');
-          window.history.replaceState({}, '', newUrl.toString());
-        }
+            };
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('newTask');
+            window.history.replaceState({}, '', newUrl.toString());
+            return updated.map(room =>
+              room.id.toString() === targetRoomId
+                ? { ...room, tasks: [...room.tasks, newTaskObj] }
+                : room
+            );
+          }
+          return updated;
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -98,10 +114,11 @@ export const RoomChecklists: React.FC = () => {
     fetchTasks();
   }, []);
 
-  // Save rooms to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('roomChecklists', JSON.stringify(rooms));
-  }, [rooms]);
+    if (!loading) {
+      localStorage.setItem('roomChecklists', JSON.stringify(rooms));
+    }
+  }, [rooms, loading]);
 
   // Spec-defined task counts per room
   const specTaskCounts = {

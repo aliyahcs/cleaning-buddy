@@ -32,16 +32,28 @@ export const MyTasks: React.FC = () => {
         const taskCounts: Record<number, number> = {};
         taskData!.forEach((t: any) => { taskCounts[t.room_id] = (taskCounts[t.room_id] || 0) + 1; });
 
+        // Read completion state from localStorage (written by RoomChecklists)
+        const completedCounts: Record<number, number> = {};
+        try {
+          const saved = localStorage.getItem('roomChecklists');
+          if (saved) {
+            JSON.parse(saved).forEach((room: any) => {
+              completedCounts[room.id] = room.tasks.filter((t: any) => t.completed).length;
+            });
+          }
+        } catch (e) {}
+
         const iconMap: Record<string, string> = { 'kitchen': '🍳', 'bathroom': '🚿', 'bedroom': '🛏', 'living room': '🛋', 'laundry': '🧺' };
         setRooms(roomsData!.map((room: any) => {
           const total = taskCounts[room.room_id] || 0;
+          const completed = completedCounts[room.room_id] || 0;
           return {
             id: room.room_id,
             name: room.name,
             icon: iconMap[room.name.toLowerCase()] || '🏠',
             totalTasks: total,
-            completedTasks: 0,
-            status: total > 0 ? 'in-progress' : 'pending',
+            completedTasks: completed,
+            status: total > 0 ? (completed >= total ? 'completed' : completed > 0 ? 'in-progress' : 'pending') : 'pending',
             nextScheduled: 'TBD'
           };
         }));
