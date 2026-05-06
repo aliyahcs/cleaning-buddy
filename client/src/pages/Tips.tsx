@@ -5,7 +5,7 @@ import {
   MagnifyingGlassIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { api } from '../lib/api';
+import { supabase } from '../lib/supabase';
 
 export const Tips: React.FC = () => {
   const navigate = useNavigate();
@@ -18,22 +18,23 @@ export const Tips: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [cleaningTips, setCleaningTips] = useState<any[]>([]);
 
-  // Fetch tips from API
   useEffect(() => {
     const fetchTips = async () => {
       try {
-        const data = await api.getCleaningTips();
-        
-        // Transform API data to match frontend structure
-        const transformedTips = data.tips.map((tip: any) => ({
+        const { data: tips, error: tipsError } = await supabase
+          .from('cleaning_tips')
+          .select('*')
+          .eq('is_active', true)
+          .order('display_order');
+        if (tipsError) throw tipsError;
+
+        setCleaningTips(tips.map((tip: any) => ({
           id: tip.tip_id,
-          category: tip.category || 'general',
+          category: 'general',
           title: tip.title,
           content: tip.tip_text,
-          icon: '💡' // Default icon, could be fetched from API later
-        }));
-        
-        setCleaningTips(transformedTips);
+          icon: '💡'
+        })));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {

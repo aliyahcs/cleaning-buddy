@@ -5,7 +5,7 @@ import {
   ClockIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { api } from '../lib/api';
+import { supabase } from '../lib/supabase';
 
 interface Task {
   id: number;
@@ -45,31 +45,32 @@ export const RoomChecklists: React.FC = () => {
 
   const [rooms, setRooms] = useState<Room[]>(defaultRooms);
 
-  // Fetch tasks from API and handle newTask parameter
   useEffect(() => {
     const fetchTasks = async () => {
-      if (!roomId) {
-        setLoading(false);
-        return;
-      }
-
       try {
-        const data = await api.getTaskTemplates(parseInt(roomId));
-        
-        // Transform API data to match frontend structure
-        let transformedTasks = data.tasks.map((task: any) => ({
-          id: task.task_template_id,
-          name: task.task_name,
-          completed: false,
-          postponed: false,
-          isOverdue: task.status === 'overdue',
-          dueDate: 'Tomorrow, 9:00 AM'
-        }));
+        const { data: templates, error: templatesError } = await supabase
+          .from('task_templates')
+          .select('*')
+          .eq('is_active', true)
+          .order('display_order');
+        if (templatesError) throw templatesError;
 
-        // Check for newTask in URL parameters
+        setRooms(prevRooms => prevRooms.map(room => ({
+          ...room,
+          tasks: templates!
+            .filter((t: any) => t.room_id === room.id)
+            .map((t: any) => ({
+              id: t.task_template_id,
+              name: t.task_name,
+              completed: false,
+              postponed: false,
+              isOverdue: false,
+              dueDate: 'Tomorrow, 9:00 AM'
+            }))
+        })));
+
         const newTask = searchParams.get('newTask');
-        if (newTask) {
-          // Add the new task to the list
+        if (newTask && roomId) {
           const newTaskObj = {
             id: Date.now(),
             name: decodeURIComponent(newTask),
@@ -78,26 +79,15 @@ export const RoomChecklists: React.FC = () => {
             isOverdue: false,
             dueDate: 'Tomorrow, 9:00 AM'
           };
-          transformedTasks = [...transformedTasks, newTaskObj];
-          
-          // Remove the newTask parameter from URL to avoid adding it again on refresh
+          setRooms(prevRooms => prevRooms.map(room =>
+            room.id.toString() === roomId
+              ? { ...room, tasks: [...room.tasks, newTaskObj] }
+              : room
+          ));
           const newUrl = new URL(window.location.href);
           newUrl.searchParams.delete('newTask');
           window.history.replaceState({}, '', newUrl.toString());
         }
-        
-        setRooms(prevRooms => {
-          const roomIndex = prevRooms.findIndex(r => r.id.toString() === roomId);
-          if (roomIndex !== -1) {
-            const updatedRooms = [...prevRooms];
-            updatedRooms[roomIndex] = {
-              ...updatedRooms[roomIndex],
-              tasks: transformedTasks
-            };
-            return updatedRooms;
-          }
-          return prevRooms;
-        });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -106,7 +96,7 @@ export const RoomChecklists: React.FC = () => {
     };
 
     fetchTasks();
-  }, [roomId, searchParams]);
+  }, []);
 
   // Save rooms to localStorage whenever they change
   useEffect(() => {

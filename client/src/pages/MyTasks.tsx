@@ -7,7 +7,7 @@ import {
   ClockIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { api } from '../lib/api';
+import { supabase } from '../lib/supabase';
 
 export const MyTasks: React.FC = () => {
   const navigate = useNavigate();
@@ -19,62 +19,32 @@ export const MyTasks: React.FC = () => {
   
   const [rooms, setRooms] = useState<any[]>([]);
 
-  // Fetch rooms and their tasks from API
   useEffect(() => {
     const fetchRoomsWithTasks = async () => {
       try {
-        const roomsData = await api.getRooms();
-        
-        // Transform API data and fetch tasks for each room
-        const transformedRooms = await Promise.all(
-          roomsData.rooms.map(async (room: any) => {
-            // Assign unique icons based on room name
-            let icon = '🏠'; // default icon
-            switch (room.name.toLowerCase()) {
-              case 'kitchen':
-                icon = '🍳';
-                break;
-              case 'bathroom':
-                icon = '🚿';
-                break;
-              case 'bedroom':
-                icon = '🛏';
-                break;
-              case 'living room':
-                icon = '🛋';
-                break;
-              case 'laundry':
-                icon = '🧺';
-                break;
-              default:
-                icon = '🏠';
-            }
+        const [{ data: roomsData, error: roomsError }, { data: taskData, error: taskError }] = await Promise.all([
+          supabase.from('rooms').select('*').order('room_id'),
+          supabase.from('task_templates').select('room_id').eq('is_active', true),
+        ]);
+        if (roomsError) throw roomsError;
+        if (taskError) throw taskError;
 
-            // Fetch tasks for this room
-            let totalTasks = 0;
-            let completedTasks = 0;
-            try {
-              const tasksData = await api.getTaskTemplates(room.room_id);
-              totalTasks = tasksData.tasks.length;
-              // For now, assume no tasks are completed since we don't have task completion tracking
-              completedTasks = 0;
-            } catch (taskErr) {
-              console.error(`Failed to fetch tasks for room ${room.name}:`, taskErr);
-            }
+        const taskCounts: Record<number, number> = {};
+        taskData!.forEach((t: any) => { taskCounts[t.room_id] = (taskCounts[t.room_id] || 0) + 1; });
 
-            return {
-              id: room.room_id,
-              name: room.name,
-              icon,
-              totalTasks,
-              completedTasks,
-              status: totalTasks > 0 ? (completedTasks === totalTasks ? 'completed' : 'in-progress') : 'pending',
-              nextScheduled: 'TBD'
-            };
-          })
-        );
-        
-        setRooms(transformedRooms);
+        const iconMap: Record<string, string> = { 'kitchen': '🍳', 'bathroom': '🚿', 'bedroom': '🛏', 'living room': '🛋', 'laundry': '🧺' };
+        setRooms(roomsData!.map((room: any) => {
+          const total = taskCounts[room.room_id] || 0;
+          return {
+            id: room.room_id,
+            name: room.name,
+            icon: iconMap[room.name.toLowerCase()] || '🏠',
+            totalTasks: total,
+            completedTasks: 0,
+            status: total > 0 ? 'in-progress' : 'pending',
+            nextScheduled: 'TBD'
+          };
+        }));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
+import {
   ChartBarIcon,
   ArrowUpIcon,
   ArrowDownIcon,
@@ -8,47 +8,38 @@ import {
   FireIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
+import { supabase } from '../lib/supabase';
+
+const TOTAL_TASKS = 11 + 7 + 8 + 5 + 5; // 36 total across all rooms
 
 export const Analytics: React.FC = () => {
-  const [scoreCopied, setScoreCopied] = React.useState(false);
-  // Get user profile from localStorage
-  const getUserProfile = () => {
-    const saved = localStorage.getItem('userProfile');
-    return saved ? JSON.parse(saved) : {
-      dwellingType: 'House' // default
+  const [scoreCopied, setScoreCopied] = useState(false);
+  const [weeklyHealthScore, setWeeklyHealthScore] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('neat_freak_score')
+          .eq('user_id', user.id)
+          .single();
+        setWeeklyHealthScore(profile?.neat_freak_score ?? null);
+      } catch (err) {
+        console.error('Failed to load analytics:', err);
+      } finally {
+        setLoading(false);
+      }
     };
-  };
+    fetchAnalytics();
+  }, []);
 
-  const userProfile = getUserProfile();
-  
-  // Calculate tasks based on dwelling type
-  const getTasksForDwellingType = (dwellingType: string) => {
-    const taskCounts = {
-      'Kitchen': 11,
-      'Bathroom': 7, 
-      'Bedroom': 8,
-      'Living Room': 5,
-      'Laundry': 5
-    };
-
-    switch (dwellingType) {
-      case 'Studio':
-        // Studio: Kitchen + Bathroom + Living Room (Bedroom combined with Living Room)
-        return taskCounts['Kitchen'] + taskCounts['Bathroom'] + taskCounts['Living Room'];
-      case 'Apartment':
-        // Apartment: All rooms except Laundry is optional
-        return taskCounts['Kitchen'] + taskCounts['Bathroom'] + taskCounts['Bedroom'] + taskCounts['Living Room'] + Math.floor(taskCounts['Laundry'] * 0.5);
-      case 'House':
-      default:
-        // House: All rooms
-        return taskCounts['Kitchen'] + taskCounts['Bathroom'] + taskCounts['Bedroom'] + taskCounts['Living Room'] + taskCounts['Laundry'];
-    }
-  };
-
-  // Mock data - replace with actual API calls
-  const weeklyHealthScore = 85;
+  const score = weeklyHealthScore ?? 0;
   const weeklyTrend = '+12% from last week';
-  const tasksThisWeek = getTasksForDwellingType(userProfile.dwellingType);
+  const tasksThisWeek = TOTAL_TASKS;
   const roomStats = [
     { room: 'Kitchen', completionRate: 92, timeSpent: 45, mostMissed: false },
     { room: 'Bathroom', completionRate: 100, timeSpent: 30, mostMissed: false },
@@ -85,6 +76,14 @@ export const Analytics: React.FC = () => {
     if (rate >= 60) return { bg: '#fef9c3', text: '#ca8a04' };
     return { bg: '#fee2e2', text: '#dc2626' };
   };
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '1.125rem', color: '#6b7280' }}>Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
@@ -128,8 +127,8 @@ export const Analytics: React.FC = () => {
                   <dl>
                     <dt style={{ fontSize: '0.875rem', fontWeight: '500', color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Weekly Health Score</dt>
                     <dd style={{ display: 'flex', alignItems: 'baseline' }}>
-                      <span style={{ fontSize: '2.25rem', fontWeight: 'bold', color: getScoreColor(weeklyHealthScore).text }}>
-                        {weeklyHealthScore}%
+                      <span style={{ fontSize: '2.25rem', fontWeight: 'bold', color: getScoreColor(score).text }}>
+                        {score}%
                       </span>
                       <span style={{ marginLeft: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
                         {getTrendIcon(weeklyTrend)}
@@ -145,7 +144,7 @@ export const Analytics: React.FC = () => {
                 </p>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(`My Cleaning Buddy weekly health score: ${weeklyHealthScore}% (${weeklyTrend}) 🧹`);
+                    navigator.clipboard.writeText(`My Cleaning Buddy weekly health score: ${score}% (${weeklyTrend}) 🧹`);
                     setScoreCopied(true);
                     setTimeout(() => setScoreCopied(false), 2000);
                   }}

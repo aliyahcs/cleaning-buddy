@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
+import {
   UserIcon,
   BellIcon,
   Cog6ToothIcon,
@@ -9,55 +9,107 @@ import {
   DocumentTextIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
+import { supabase } from '../lib/supabase';
+
+const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('profile');
-  
-  // Default user profile
-  const defaultProfile = {
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [userProfile, setUserProfile] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
     cleaningDay: 'Saturday',
     cleaningTime: '09:00',
-    dwellingType: 'House',
-    neatFreakScore: 65,
-    neatFreakCategory: 'Neat Freak',
-    priorityRooms: ['Kitchen', 'Bathroom'],
+    dwellingType: '',
+    neatFreakScore: 0,
+    neatFreakCategory: '',
+    priorityRooms: [] as string[],
     notifications: {
       pushEnabled: true,
       inAppEnabled: true,
       soundId: 1,
-      reminderTime: '08:00'
     }
-  };
-  
-  const [userProfile, setUserProfile] = useState(defaultProfile);
+  });
 
-  // Load user profile from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('userProfile');
-    if (saved) {
+    const fetchProfile = async () => {
       try {
-        setUserProfile(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to parse saved profile:', e);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const [userRes, profileRes, roomsRes, notifRes] = await Promise.all([
+          supabase.from('users').select('first_name, last_name').eq('user_id', user.id).single(),
+          supabase.from('user_profiles').select('selected_cleaning_weekday, selected_cleaning_time, neat_freak_score, dwelling_types(name), cleaner_categories(name)').eq('user_id', user.id).single(),
+          supabase.from('user_room_priorities').select('rooms(name)').eq('user_id', user.id).order('priority_rank'),
+          supabase.from('user_notification_preferences').select('enable_push, enable_in_app').eq('user_id', user.id).single(),
+        ]);
+
+        const p = profileRes.data;
+        const roomNames = (roomsRes.data || []).map((r: any) => r.rooms?.name).filter(Boolean);
+
+        setUserProfile({
+          firstName: userRes.data?.first_name || '',
+          lastName: userRes.data?.last_name || '',
+          email: user.email || '',
+          cleaningDay: p?.selected_cleaning_weekday != null ? dayNames[p.selected_cleaning_weekday] : 'Saturday',
+          cleaningTime: p?.selected_cleaning_time ? p.selected_cleaning_time.slice(0, 5) : '09:00',
+          dwellingType: (p?.dwelling_types as any)?.name || '',
+          neatFreakScore: p?.neat_freak_score || 0,
+          neatFreakCategory: (p?.cleaner_categories as any)?.name || '',
+          priorityRooms: roomNames,
+          notifications: {
+            pushEnabled: notifRes.data?.enable_push ?? true,
+            inAppEnabled: notifRes.data?.enable_in_app ?? true,
+            soundId: 1,
+          }
+        });
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+    fetchProfile();
   }, []);
 
-  const saveProfile = () => {
-    // Save to localStorage for persistence
-    localStorage.setItem('userProfile', JSON.stringify(userProfile));
-    console.log('Saving profile:', userProfile);
-    alert('Profile saved successfully!');
+  const saveProfile = async () => {
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const dayIndex = dayNames.indexOf(userProfile.cleaningDay);
+      await Promise.all([
+        supabase.from('users').update({ first_name: userProfile.firstName, last_name: userProfile.lastName }).eq('user_id', user.id),
+        supabase.from('user_profiles').update({ selected_cleaning_weekday: dayIndex, selected_cleaning_time: userProfile.cleaningTime }).eq('user_id', user.id),
+      ]);
+      alert('Profile saved successfully!');
+    } catch (err) {
+      alert('Failed to save profile.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const saveNotifications = () => {
-    // Save to localStorage for persistence
-    localStorage.setItem('userProfile', JSON.stringify(userProfile));
-    console.log('Saving notifications:', userProfile.notifications);
-    alert('Notification preferences saved!');
+  const saveNotifications = async () => {
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase.from('user_notification_preferences').upsert({
+        user_id: user.id,
+        enable_push: userProfile.notifications.pushEnabled,
+        enable_in_app: userProfile.notifications.inAppEnabled,
+      });
+      alert('Notification preferences saved!');
+    } catch (err) {
+      alert('Failed to save notifications.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const tabs = [
@@ -66,6 +118,14 @@ export const Settings: React.FC = () => {
     { id: 'privacy', name: 'Privacy', icon: ShieldCheckIcon },
     { id: 'about', name: 'About', icon: DocumentTextIcon }
   ];
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '1.125rem', color: '#6b7280' }}>Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
@@ -185,9 +245,11 @@ export const Settings: React.FC = () => {
                     onChange={(e) => setUserProfile({...userProfile, dwellingType: e.target.value})}
                     style={{ display: 'block', width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', backgroundColor: 'white', fontSize: '0.875rem', outline: 'none' }}
                   >
-                    <option value="Apartment">Apartment</option>
-                    <option value="House">House</option>
                     <option value="Studio">Studio</option>
+                    <option value="1-Bedroom Apartment">1-Bedroom Apartment</option>
+                    <option value="2-Bedroom Apartment">2-Bedroom Apartment</option>
+                    <option value="3-Bedroom House">3-Bedroom House</option>
+                    <option value="4+ Bedroom House">4+ Bedroom House</option>
                   </select>
                 </div>
 
@@ -201,11 +263,12 @@ export const Settings: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
                   <button
                     onClick={saveProfile}
-                    style={{ display: 'inline-flex', justifyContent: 'center', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: 'white', backgroundColor: '#2563eb', cursor: 'pointer' }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                    disabled={saving}
+                    style={{ display: 'inline-flex', justifyContent: 'center', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: 'white', backgroundColor: saving ? '#9ca3af' : '#2563eb', cursor: saving ? 'not-allowed' : 'pointer' }}
+                    onMouseOver={(e) => { if (!saving) e.currentTarget.style.backgroundColor = '#1d4ed8'; }}
+                    onMouseOut={(e) => { if (!saving) e.currentTarget.style.backgroundColor = '#2563eb'; }}
                   >
-                    Save Profile
+                    {saving ? 'Saving...' : 'Save Profile'}
                   </button>
                 </div>
               </div>
@@ -306,11 +369,12 @@ export const Settings: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
                   <button
                     onClick={saveNotifications}
-                    style={{ display: 'inline-flex', justifyContent: 'center', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: 'white', backgroundColor: '#2563eb', cursor: 'pointer' }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                    disabled={saving}
+                    style={{ display: 'inline-flex', justifyContent: 'center', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: 'white', backgroundColor: saving ? '#9ca3af' : '#2563eb', cursor: saving ? 'not-allowed' : 'pointer' }}
+                    onMouseOver={(e) => { if (!saving) e.currentTarget.style.backgroundColor = '#1d4ed8'; }}
+                    onMouseOut={(e) => { if (!saving) e.currentTarget.style.backgroundColor = '#2563eb'; }}
                   >
-                    Save Notifications
+                    {saving ? 'Saving...' : 'Save Notifications'}
                   </button>
                 </div>
               </div>
