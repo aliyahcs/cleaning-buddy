@@ -242,14 +242,6 @@ export const Help: React.FC = () => {
           ))}
         </div>
 
-        <div style={{ marginTop: '2rem', backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
-          <div style={{ padding: '1rem 1.5rem' }}>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827', marginBottom: '0.5rem' }}>Still need help?</h3>
-            <p style={{ color: '#4b5563', fontSize: '0.875rem' }}>
-              Contact us at <a href="mailto:aliyahcardenas66@gmail.com" style={{ color: '#2563eb', textDecoration: 'none' }}>aliyahcardenas66@gmail.com</a>
-            </p>
-          </div>
-        </div>
       </main>
     </div>
   );
