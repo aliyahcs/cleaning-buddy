@@ -22,11 +22,14 @@ export const Dashboard: React.FC = () => {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError || !user) { setError('Not authenticated'); return; }
 
-        const [userRes, profileRes, priorityRes, roomsRes] = await Promise.all([
+        const [userRes, profileRes, priorityRes, roomsRes, templateRes, completionsRes, customTasksRes] = await Promise.all([
           supabase.from('users').select('first_name, last_name').eq('user_id', user.id).single(),
           supabase.from('user_profiles').select('selected_cleaning_weekday, selected_cleaning_time, neat_freak_score, cleaner_categories(name)').eq('user_id', user.id).single(),
           supabase.from('user_room_priorities').select('room_id, priority_rank').eq('user_id', user.id).order('priority_rank'),
           supabase.from('rooms').select('room_id, name'),
+          supabase.from('task_templates').select('task_template_id, room_id').eq('is_active', true),
+          supabase.from('user_task_completions').select('task_template_id, postponed').eq('user_id', user.id),
+          supabase.from('user_custom_tasks').select('room_id, completed, postponed').eq('user_id', user.id),
         ]);
 
         if (userRes.error) throw userRes.error;
@@ -35,29 +38,34 @@ export const Dashboard: React.FC = () => {
         const roomNameMap: Record<number, string> = {};
         (roomsRes.data || []).forEach((r: any) => { roomNameMap[r.room_id] = r.name; });
 
-        let completionByName: Record<string, { completed: number; total: number }> = {};
-        try {
-          const saved = localStorage.getItem('roomChecklists');
-          if (saved) {
-            JSON.parse(saved).forEach((r: any) => {
-              completionByName[r.name.toLowerCase()] = {
-                completed: r.tasks.filter((t: any) => t.completed).length,
-                total: r.tasks.length,
-              };
-            });
-          }
-        } catch (e) {}
+        const templateRoomMap: Record<number, number> = {};
+        const taskCounts: Record<number, number> = {};
+        (templateRes.data || []).forEach((t: any) => {
+          templateRoomMap[t.task_template_id] = t.room_id;
+          taskCounts[t.room_id] = (taskCounts[t.room_id] || 0) + 1;
+        });
+        (customTasksRes.data || []).forEach((ct: any) => {
+          taskCounts[ct.room_id] = (taskCounts[ct.room_id] || 0) + 1;
+        });
+
+        const completedCounts: Record<number, number> = {};
+        (completionsRes.data || []).filter((c: any) => !c.postponed).forEach((c: any) => {
+          const rId = templateRoomMap[c.task_template_id];
+          if (rId) completedCounts[rId] = (completedCounts[rId] || 0) + 1;
+        });
+        (customTasksRes.data || []).filter((ct: any) => ct.completed && !ct.postponed).forEach((ct: any) => {
+          completedCounts[ct.room_id] = (completedCounts[ct.room_id] || 0) + 1;
+        });
 
         setPriorityRooms((priorityRes.data || []).map((p: any) => {
           const name = roomNameMap[p.room_id] || 'Unknown';
-          const stats = completionByName[name.toLowerCase()] ?? { completed: 0, total: 0 };
           return {
             roomId: p.room_id,
             rank: p.priority_rank,
             name,
             icon: iconMap[name.toLowerCase()] || '🏠',
-            completed: stats.completed,
-            total: stats.total,
+            completed: completedCounts[p.room_id] || 0,
+            total: taskCounts[p.room_id] || 0,
           };
         }));
 

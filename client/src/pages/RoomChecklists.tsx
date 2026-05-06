@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { 
+import {
   CalendarDaysIcon,
   ClockIcon,
   XMarkIcon
@@ -14,6 +14,7 @@ interface Task {
   postponed: boolean;
   isOverdue: boolean;
   dueDate?: string;
+  isCustom?: boolean;
 }
 
 interface Room {
@@ -29,10 +30,18 @@ const DWELLING_ROOMS: Record<number, number[]> = {
   3: [1, 2, 3, 4, 5],
 };
 
+const DEFAULT_ROOMS: Room[] = [
+  { id: 1, name: 'Kitchen', icon: '🍳', tasks: [] },
+  { id: 2, name: 'Bathroom', icon: '🚿', tasks: [] },
+  { id: 3, name: 'Bedroom', icon: '🛏', tasks: [] },
+  { id: 4, name: 'Living Room', icon: '🛋', tasks: [] },
+  { id: 5, name: 'Laundry', icon: '🧺', tasks: [] },
+];
+
 export const RoomChecklists: React.FC = () => {
   const [searchParams] = useSearchParams();
   const roomId = searchParams.get('room');
-  
+
   const [showPostponeModal, setShowPostponeModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -41,82 +50,74 @@ export const RoomChecklists: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [allowedRoomIds, setAllowedRoomIds] = useState<number[]>([1, 2, 3, 4, 5]);
   const [userId, setUserId] = useState<string | null>(null);
-
-  // Default rooms data structure
-  const defaultRooms: Room[] = [
-    { id: 1, name: 'Kitchen', icon: '🍳', tasks: [] },
-    { id: 2, name: 'Bathroom', icon: '🚿', tasks: [] },
-    { id: 3, name: 'Bedroom', icon: '🛏', tasks: [] },
-    { id: 4, name: 'Living Room', icon: '🛋', tasks: [] },
-    { id: 5, name: 'Laundry', icon: '🧺', tasks: [] }
-  ];
-
-  const [rooms, setRooms] = useState<Room[]>(() => {
-    try {
-      const saved = localStorage.getItem('roomChecklists');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return defaultRooms;
-  });
+  const [rooms, setRooms] = useState<Room[]>(DEFAULT_ROOMS);
 
   useEffect(() => {
     const fetchTasks = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) setUserId(user.id);
-        const [{ data: templates, error: templatesError }, { data: profileData }, { data: completionsData }] = await Promise.all([
+
+        const newTaskName = searchParams.get('newTask');
+        const targetRoomId = searchParams.get('room');
+
+        const [{ data: templates, error: templatesError }, { data: profileData }, { data: completionsData }, { data: customTasksData }] = await Promise.all([
           supabase.from('task_templates').select('*').eq('is_active', true).order('display_order'),
           user ? supabase.from('user_profiles').select('dwelling_type_id').eq('user_id', user.id).single() : Promise.resolve({ data: null }),
-          user ? supabase.from('user_task_completions').select('task_template_id').eq('user_id', user.id) : Promise.resolve({ data: [] }),
+          user ? supabase.from('user_task_completions').select('task_template_id, postponed, due_date').eq('user_id', user.id) : Promise.resolve({ data: [] }),
+          user ? supabase.from('user_custom_tasks').select('*').eq('user_id', user.id) : Promise.resolve({ data: [] }),
         ]);
         if (templatesError) throw templatesError;
+
         const dwellingId: number = (profileData as any)?.dwelling_type_id ?? 2;
         setAllowedRoomIds(DWELLING_ROOMS[dwellingId] ?? [1, 2, 3, 4, 5]);
-        const completedIds = new Set((completionsData || []).map((c: any) => c.task_template_id));
 
-        setRooms(prevRooms => {
-          const updated = prevRooms.map(room => {
-            const templateTasks = templates!
-              .filter((t: any) => t.room_id === room.id)
-              .map((t: any) => {
-                const existing = room.tasks.find(et => et.id === t.task_template_id);
-                return {
-                  id: t.task_template_id,
-                  name: t.task_name,
-                  completed: completedIds.has(t.task_template_id),
-                  postponed: existing?.postponed ?? false,
-                  isOverdue: existing?.isOverdue ?? false,
-                  dueDate: existing?.dueDate ?? 'Tomorrow, 9:00 AM'
-                };
-              });
-            // Preserve quick-added tasks (ids not in templates)
-            const templateIds = new Set(templates!.map((t: any) => t.task_template_id));
-            const customTasks = room.tasks.filter(et => !templateIds.has(et.id));
-            return { ...room, tasks: [...templateTasks, ...customTasks] };
-          });
+        const completedIds = new Set(
+          (completionsData || []).filter((c: any) => !c.postponed).map((c: any) => c.task_template_id)
+        );
+        const postponedMap = new Map(
+          (completionsData || []).filter((c: any) => c.postponed).map((c: any) => [c.task_template_id, c.due_date as string | undefined])
+        );
 
-          const newTask = searchParams.get('newTask');
-          const targetRoomId = roomId;
-          if (newTask && targetRoomId) {
-            const newTaskObj: Task = {
-              id: Date.now(),
-              name: decodeURIComponent(newTask),
-              completed: false,
-              postponed: false,
+        let allCustomTasks = [...(customTasksData || [])];
+
+        if (newTaskName && targetRoomId && user) {
+          const { data: inserted } = await supabase
+            .from('user_custom_tasks')
+            .insert({ user_id: user.id, room_id: parseInt(targetRoomId), task_name: decodeURIComponent(newTaskName), completed: false, postponed: false })
+            .select('*')
+            .single();
+          if (inserted) allCustomTasks.push(inserted);
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('newTask');
+          window.history.replaceState({}, '', newUrl.toString());
+        }
+
+        setRooms(DEFAULT_ROOMS.map(room => {
+          const templateTasks: Task[] = templates!
+            .filter((t: any) => t.room_id === room.id)
+            .map((t: any) => ({
+              id: t.task_template_id,
+              name: t.task_name,
+              completed: completedIds.has(t.task_template_id),
+              postponed: postponedMap.has(t.task_template_id),
               isOverdue: false,
-              dueDate: 'Tomorrow, 9:00 AM'
-            };
-            const newUrl = new URL(window.location.href);
-            newUrl.searchParams.delete('newTask');
-            window.history.replaceState({}, '', newUrl.toString());
-            return updated.map(room =>
-              room.id.toString() === targetRoomId
-                ? { ...room, tasks: [...room.tasks, newTaskObj] }
-                : room
-            );
-          }
-          return updated;
-        });
+              dueDate: postponedMap.get(t.task_template_id),
+              isCustom: false,
+            }));
+          const dbCustomTasks: Task[] = allCustomTasks
+            .filter((ct: any) => ct.room_id === room.id)
+            .map((ct: any) => ({
+              id: ct.custom_task_id,
+              name: ct.task_name,
+              completed: !!ct.completed && !ct.postponed,
+              postponed: !!ct.postponed,
+              isOverdue: false,
+              dueDate: ct.due_date ?? undefined,
+              isCustom: true,
+            }));
+          return { ...room, tasks: [...templateTasks, ...dbCustomTasks] };
+        }));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -140,31 +141,42 @@ export const RoomChecklists: React.FC = () => {
   const completionPercentage = totalTasks > 0 ? Math.min(Math.round((completedTasks / totalTasks) * 100), 100) : 0;
 
   const toggleTask = (taskId: number) => {
-    const isTemplateTask = taskId < 1_000_000_000_000;
     const task = currentRoom.tasks.find(t => t.id === taskId);
-    const willBeCompleted = !task?.completed;
+    if (!task || !userId) return;
 
-    if (isTemplateTask && userId) {
+    const willBeCompleted = !task.completed;
+
+    if (task.isCustom) {
+      supabase.from('user_custom_tasks')
+        .update({ completed: willBeCompleted, postponed: false, due_date: null })
+        .eq('custom_task_id', taskId)
+        .eq('user_id', userId)
+        .then(() => {});
+    } else {
       if (willBeCompleted) {
-        supabase.from('user_task_completions').upsert({ user_id: userId, task_template_id: taskId }).then(() => {});
+        supabase.from('user_task_completions')
+          .upsert({ user_id: userId, task_template_id: taskId, postponed: false, due_date: null })
+          .then(() => {});
       } else {
-        supabase.from('user_task_completions').delete().eq('user_id', userId).eq('task_template_id', taskId).then(() => {});
+        supabase.from('user_task_completions')
+          .delete()
+          .eq('user_id', userId)
+          .eq('task_template_id', taskId)
+          .then(() => {});
       }
     }
 
-    setRooms(prevRooms => {
-      return prevRooms.map(room => {
-        if (room.id === currentRoom.id) {
-          return {
-            ...room,
-            tasks: room.tasks.map(t =>
-              t.id === taskId ? { ...t, completed: !t.completed } : t
-            )
-          };
-        }
-        return room;
-      });
-    });
+    setRooms(prevRooms => prevRooms.map(room => {
+      if (room.id === currentRoom.id) {
+        return {
+          ...room,
+          tasks: room.tasks.map(t =>
+            t.id === taskId ? { ...t, completed: willBeCompleted, postponed: false, dueDate: undefined } : t
+          ),
+        };
+      }
+      return room;
+    }));
   };
 
   const openPostponeModal = (task: Task) => {
@@ -177,41 +189,31 @@ export const RoomChecklists: React.FC = () => {
 
     let newDueDate = '';
     if (type === 'tomorrow') {
-      // Parse the original task's time if it exists
       const originalTime = selectedTask.dueDate || 'Tomorrow, 09:00 AM';
       const timePart = originalTime.split(', ')[1] || '09:00 AM';
       const [hours, minutes] = timePart.split(':');
       const ampm = minutes.split(' ')[1] || 'AM';
       const mins = minutes.split(' ')[0];
-      
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      
-      // Set the time to match the original task's time
       let hour = parseInt(hours);
       if (ampm === 'PM' && hour !== 12) hour += 12;
       if (ampm === 'AM' && hour === 12) hour = 0;
-      
       tomorrow.setHours(hour, parseInt(mins), 0, 0);
       const dayName = tomorrow.toLocaleDateString('en-US', { weekday: 'long' });
       const timeStr = tomorrow.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       newDueDate = `${dayName}, ${timeStr}`;
     } else if (type === 'next-week') {
-      // Parse the original task's time if it exists
       const originalTime = selectedTask.dueDate || 'Tomorrow, 09:00 AM';
       const timePart = originalTime.split(', ')[1] || '09:00 AM';
       const [hours, minutes] = timePart.split(':');
       const ampm = minutes.split(' ')[1] || 'AM';
       const mins = minutes.split(' ')[0];
-      
       const nextWeek = new Date();
       nextWeek.setDate(nextWeek.getDate() + 7);
-      
-      // Set the time to match the original task's time
       let hour = parseInt(hours);
       if (ampm === 'PM' && hour !== 12) hour += 12;
       if (ampm === 'AM' && hour === 12) hour = 0;
-      
       nextWeek.setHours(hour, parseInt(mins), 0, 0);
       const dayName = nextWeek.toLocaleDateString('en-US', { weekday: 'long' });
       const timeStr = nextWeek.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -223,23 +225,34 @@ export const RoomChecklists: React.FC = () => {
       newDueDate = `${dayName}, ${timeStr}`;
     }
 
-    // Update the task's due date in state
-    setRooms(prevRooms => {
-      return prevRooms.map(room => {
-        if (room.id === currentRoom.id) {
-          return {
-            ...room,
-            tasks: room.tasks.map(task => 
-              task.id === selectedTask.id 
-                ? { ...task, dueDate: newDueDate, postponed: true }
-                : task
-            )
-          };
-        }
-        return room;
-      });
-    });
-    
+    if (userId) {
+      if (selectedTask.isCustom) {
+        supabase.from('user_custom_tasks')
+          .update({ postponed: true, due_date: newDueDate, completed: false })
+          .eq('custom_task_id', selectedTask.id)
+          .eq('user_id', userId)
+          .then(() => {});
+      } else {
+        supabase.from('user_task_completions')
+          .upsert({ user_id: userId, task_template_id: selectedTask.id, postponed: true, due_date: newDueDate })
+          .then(() => {});
+      }
+    }
+
+    setRooms(prevRooms => prevRooms.map(room => {
+      if (room.id === currentRoom.id) {
+        return {
+          ...room,
+          tasks: room.tasks.map(task =>
+            task.id === selectedTask.id
+              ? { ...task, dueDate: newDueDate, postponed: true, completed: false }
+              : task
+          ),
+        };
+      }
+      return room;
+    }));
+
     setShowPostponeModal(false);
     setShowDatePicker(false);
     setSelectedDate('');

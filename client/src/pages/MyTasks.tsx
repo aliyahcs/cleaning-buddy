@@ -29,11 +29,13 @@ export const MyTasks: React.FC = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
 
-        const [{ data: roomsData, error: roomsError }, { data: taskData, error: taskError }, { data: profileData }, { data: priorityData }] = await Promise.all([
+        const [{ data: roomsData, error: roomsError }, { data: taskData, error: taskError }, { data: profileData }, { data: priorityData }, { data: completionsData }, { data: customTasksData }] = await Promise.all([
           supabase.from('rooms').select('*').order('room_id'),
-          supabase.from('task_templates').select('room_id').eq('is_active', true),
+          supabase.from('task_templates').select('task_template_id, room_id').eq('is_active', true),
           user ? supabase.from('user_profiles').select('dwelling_type_id').eq('user_id', user.id).single() : Promise.resolve({ data: null }),
           user ? supabase.from('user_room_priorities').select('room_id, priority_rank').eq('user_id', user.id).order('priority_rank') : Promise.resolve({ data: [] }),
+          user ? supabase.from('user_task_completions').select('task_template_id, postponed').eq('user_id', user.id) : Promise.resolve({ data: [] }),
+          user ? supabase.from('user_custom_tasks').select('room_id, completed, postponed').eq('user_id', user.id) : Promise.resolve({ data: [] }),
         ]);
         if (roomsError) throw roomsError;
         if (taskError) throw taskError;
@@ -45,19 +47,23 @@ export const MyTasks: React.FC = () => {
         const allowedRoomIds = DWELLING_ROOMS[dwellingId] ?? [1, 2, 3, 4, 5];
 
         const taskCounts: Record<number, number> = {};
-        taskData!.forEach((t: any) => { taskCounts[t.room_id] = (taskCounts[t.room_id] || 0) + 1; });
+        const templateRoomMap: Record<number, number> = {};
+        taskData!.forEach((t: any) => {
+          templateRoomMap[t.task_template_id] = t.room_id;
+          taskCounts[t.room_id] = (taskCounts[t.room_id] || 0) + 1;
+        });
+        (customTasksData || []).forEach((ct: any) => {
+          taskCounts[ct.room_id] = (taskCounts[ct.room_id] || 0) + 1;
+        });
 
         const completedCounts: Record<number, number> = {};
-        try {
-          const saved = localStorage.getItem('roomChecklists');
-          if (saved) {
-            JSON.parse(saved).forEach((room: any) => {
-              const localTotal = room.tasks.length;
-              if (localTotal > (taskCounts[room.id] || 0)) taskCounts[room.id] = localTotal;
-              completedCounts[room.id] = room.tasks.filter((t: any) => t.completed).length;
-            });
-          }
-        } catch (e) {}
+        (completionsData || []).filter((c: any) => !c.postponed).forEach((c: any) => {
+          const rId = templateRoomMap[c.task_template_id];
+          if (rId) completedCounts[rId] = (completedCounts[rId] || 0) + 1;
+        });
+        (customTasksData || []).filter((ct: any) => ct.completed && !ct.postponed).forEach((ct: any) => {
+          completedCounts[ct.room_id] = (completedCounts[ct.room_id] || 0) + 1;
+        });
 
         const iconMap: Record<string, string> = { 'kitchen': '🍳', 'bathroom': '🚿', 'bedroom': '🛏', 'living room': '🛋', 'laundry': '🧺' };
         setRooms(

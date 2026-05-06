@@ -26,30 +26,50 @@ export const Analytics: React.FC = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('neat_freak_score, dwelling_type_id')
-          .eq('user_id', user.id)
-          .single();
-        setWeeklyHealthScore(profile?.neat_freak_score ?? null);
-        setTotalTasks(TASKS_BY_DWELLING[profile?.dwelling_type_id ?? 2] ?? 36);
 
-        try {
-          const saved = localStorage.getItem('roomChecklists');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            setRoomStats(
-              parsed
-                .filter((r: any) => r.tasks.length > 0)
-                .map((r: any) => ({
-                  name: r.name,
-                  icon: r.icon,
-                  completed: r.tasks.filter((t: any) => t.completed).length,
-                  total: r.tasks.length,
-                }))
-            );
-          }
-        } catch (e) {}
+        const [{ data: profile }, { data: templates }, { data: completionsData }, { data: customTasksData }, { data: roomsData }] = await Promise.all([
+          supabase.from('user_profiles').select('neat_freak_score, dwelling_type_id').eq('user_id', user.id).single(),
+          supabase.from('task_templates').select('task_template_id, room_id').eq('is_active', true),
+          supabase.from('user_task_completions').select('task_template_id, postponed').eq('user_id', user.id),
+          supabase.from('user_custom_tasks').select('room_id, completed, postponed').eq('user_id', user.id),
+          supabase.from('rooms').select('room_id, name').order('room_id'),
+        ]);
+
+        setWeeklyHealthScore(profile?.neat_freak_score ?? null);
+
+        const iconMap: Record<string, string> = { 'kitchen': '🍳', 'bathroom': '🚿', 'bedroom': '🛏', 'living room': '🛋', 'laundry': '🧺' };
+        const templateRoomMap: Record<number, number> = {};
+        const taskCounts: Record<number, number> = {};
+        (templates || []).forEach((t: any) => {
+          templateRoomMap[t.task_template_id] = t.room_id;
+          taskCounts[t.room_id] = (taskCounts[t.room_id] || 0) + 1;
+        });
+        (customTasksData || []).forEach((ct: any) => {
+          taskCounts[ct.room_id] = (taskCounts[ct.room_id] || 0) + 1;
+        });
+
+        const completedCounts: Record<number, number> = {};
+        (completionsData || []).filter((c: any) => !c.postponed).forEach((c: any) => {
+          const rId = templateRoomMap[c.task_template_id];
+          if (rId) completedCounts[rId] = (completedCounts[rId] || 0) + 1;
+        });
+        (customTasksData || []).filter((ct: any) => ct.completed && !ct.postponed).forEach((ct: any) => {
+          completedCounts[ct.room_id] = (completedCounts[ct.room_id] || 0) + 1;
+        });
+
+        const dbTotal = Object.values(taskCounts).reduce((sum, n) => sum + n, 0);
+        setTotalTasks(dbTotal || (TASKS_BY_DWELLING[profile?.dwelling_type_id ?? 2] ?? 36));
+
+        setRoomStats(
+          (roomsData || [])
+            .filter((r: any) => taskCounts[r.room_id] > 0)
+            .map((r: any) => ({
+              name: r.name,
+              icon: iconMap[r.name.toLowerCase()] || '🏠',
+              completed: completedCounts[r.room_id] || 0,
+              total: taskCounts[r.room_id] || 0,
+            }))
+        );
       } catch (err) {
         console.error('Failed to load analytics:', err);
       } finally {
