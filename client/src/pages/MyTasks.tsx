@@ -22,7 +22,6 @@ export const MyTasks: React.FC = () => {
   const [selectedRoomId, setSelectedRoomId] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [priorityRoomIds, setPriorityRoomIds] = useState<number[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
 
   useEffect(() => {
@@ -41,7 +40,6 @@ export const MyTasks: React.FC = () => {
 
         const priorityMap: Record<number, number> = {};
         (priorityData || []).forEach((p: any) => { priorityMap[p.room_id] = p.priority_rank; });
-        setPriorityRoomIds((priorityData || []).map((p: any) => p.room_id));
 
         const dwellingId: number = profileData?.dwelling_type_id ?? 2;
         const allowedRoomIds = DWELLING_ROOMS[dwellingId] ?? [1, 2, 3, 4, 5];
