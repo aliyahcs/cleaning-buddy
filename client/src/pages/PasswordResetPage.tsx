@@ -1,52 +1,107 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { EnvelopeIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { EnvelopeIcon, ArrowLeftIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { supabase } from '../lib/supabase';
 
 export const PasswordResetPage: React.FC = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [requestSent, setRequestSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const validateEmail = () => {
-    if (!email) {
-      setError('Email is required');
-      return false;
-    }
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setError('Email is invalid');
-      return false;
-    }
-    setError('');
-    return true;
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordUpdated, setPasswordUpdated] = useState(false);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoveryMode(true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateEmail()) {
-      return;
-    }
+    if (!email) { setEmailError('Email is required'); return; }
+    if (!/\S+@\S+\.\S+/.test(email)) { setEmailError('Email is invalid'); return; }
 
     setIsLoading(true);
-    
-    // Mock password reset - replace with actual API call
-    setTimeout(() => {
-      setIsLoading(false);
-      setSuccess(true);
-    }, 1000);
+    setEmailError('');
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    setIsLoading(false);
+    if (error) {
+      setEmailError(error.message);
+    } else {
+      setRequestSent(true);
+    }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEmail(e.target.value);
-    if (error) {
-      setError('');
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword) { setPasswordError('Password is required'); return; }
+    if (newPassword.length < 8) { setPasswordError('Password must be at least 8 characters'); return; }
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
+      setPasswordError('Password must contain uppercase, lowercase, and a number');
+      return;
     }
+    if (newPassword !== confirmPassword) { setPasswordError('Passwords do not match'); return; }
+
+    setIsLoading(true);
+    setPasswordError('');
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    setIsLoading(false);
+    if (error) {
+      setPasswordError(error.message);
+    } else {
+      setPasswordUpdated(true);
+      setTimeout(() => navigate('/login'), 3000);
+    }
+  };
+
+  const inputStyle = (hasError: boolean): React.CSSProperties => ({
+    appearance: 'none',
+    display: 'block',
+    width: '100%',
+    padding: '0.75rem 1rem',
+    border: `2px solid ${hasError ? '#ef4444' : '#d1d5db'}`,
+    borderRadius: '0.5rem',
+    color: '#111827',
+    fontSize: '0.875rem',
+    outline: 'none',
+    backgroundColor: 'white',
+  });
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: '0.875rem',
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: '0.5rem',
+  };
+
+  const errorStyle: React.CSSProperties = {
+    marginTop: '0.5rem',
+    fontSize: '0.875rem',
+    color: '#dc2626',
   };
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
       <div style={{ maxWidth: '28rem', width: '100%' }}>
+
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <Link to="/" style={{ display: 'inline-flex', textDecoration: 'none' }}>
             <div style={{ height: '4rem', width: '4rem', backgroundColor: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(10px)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)' }}>
@@ -54,132 +109,139 @@ export const PasswordResetPage: React.FC = () => {
             </div>
           </Link>
           <h2 style={{ marginTop: '1.5rem', fontSize: '2rem', fontWeight: '800', color: 'white' }}>
-            Reset your password
+            {isRecoveryMode ? 'Set new password' : 'Reset your password'}
           </h2>
           <p style={{ marginTop: '0.5rem', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.875rem' }}>
-            Enter your email address and we'll send you a link to reset your password.
+            {isRecoveryMode
+              ? 'Enter a new password for your account.'
+              : "Enter your email and we'll send you a reset link."}
           </p>
         </div>
 
-        {!success ? (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        {/* ── SET NEW PASSWORD (recovery mode) ── */}
+        {isRecoveryMode && !passwordUpdated && (
+          <form onSubmit={handleUpdatePassword} style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', padding: '2.5rem', borderRadius: '1rem', boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div>
-              <label htmlFor="email" style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.5rem' }}>
-                Email address
-              </label>
+              <label style={labelStyle}>New password</label>
               <div style={{ position: 'relative' }}>
-                <div style={{ position: 'absolute', top: '50%', left: '0.75rem', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
-                  <EnvelopeIcon style={{ height: '1.25rem', width: '1.25rem', color: 'rgba(255, 255, 255, 0.5)' }} />
-                </div>
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={handleChange}
-                  style={{
-                    appearance: 'none',
-                    display: 'block',
-                    width: '100%',
-                    paddingLeft: '2.5rem',
-                    paddingRight: '0.75rem',
-                    paddingTop: '0.75rem',
-                    paddingBottom: '0.75rem',
-                    border: `1px solid ${error ? 'rgba(239, 68, 68, 0.5)' : 'rgba(255, 255, 255, 0.2)'}`,
-                    borderRadius: '0.5rem',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(10px)',
-                    color: 'white',
-                    fontSize: '0.875rem',
-                    outline: 'none',
-                    transition: 'all 0.2s'
-                  }}
-                  placeholder="Enter your email"
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => { setNewPassword(e.target.value); setPasswordError(''); }}
+                  style={{ ...inputStyle(!!passwordError), paddingRight: '2.5rem' }}
+                  placeholder="Create a new password"
+                  autoComplete="new-password"
                 />
-                {error && (
-                  <p style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#ef4444' }}>
-                    {error}
-                  </p>
-                )}
+                <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} style={{ position: 'absolute', top: '50%', right: '0.75rem', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }}>
+                  {showNewPassword ? <EyeSlashIcon style={{ height: '1.25rem', width: '1.25rem', color: '#9ca3af' }} /> : <EyeIcon style={{ height: '1.25rem', width: '1.25rem', color: '#9ca3af' }} />}
+                </button>
               </div>
             </div>
 
             <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  color: 'white',
-                  backgroundColor: isLoading ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.2)',
-                  backdropFilter: 'blur(10px)',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                {isLoading ? (
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <div style={{ animation: 'spin 1s linear infinite', height: '1rem', width: '1rem', border: '2px solid transparent', borderTop: '2px solid white', borderRadius: '50%', marginRight: '0.5rem' }}></div>
-                    Sending reset link...
-                  </div>
-                ) : (
-                  'Send reset link'
-                )}
-              </button>
+              <label style={labelStyle}>Confirm new password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(''); }}
+                  style={{ ...inputStyle(!!passwordError), paddingRight: '2.5rem' }}
+                  placeholder="Confirm your new password"
+                  autoComplete="new-password"
+                />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} style={{ position: 'absolute', top: '50%', right: '0.75rem', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }}>
+                  {showConfirmPassword ? <EyeSlashIcon style={{ height: '1.25rem', width: '1.25rem', color: '#9ca3af' }} /> : <EyeIcon style={{ height: '1.25rem', width: '1.25rem', color: '#9ca3af' }} />}
+                </button>
+              </div>
+              {passwordError && <p style={errorStyle}>{passwordError}</p>}
             </div>
 
+            <button
+              type="submit"
+              disabled={isLoading}
+              style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '0.875rem 1rem', border: 'none', borderRadius: '0.5rem', fontSize: '1rem', fontWeight: '600', color: 'white', backgroundColor: isLoading ? '#9ca3af' : '#667eea', cursor: isLoading ? 'not-allowed' : 'pointer', transition: 'background-color 0.2s' }}
+              onMouseOver={(e) => { if (!isLoading) e.currentTarget.style.backgroundColor = '#5568d3'; }}
+              onMouseOut={(e) => { if (!isLoading) e.currentTarget.style.backgroundColor = '#667eea'; }}
+            >
+              {isLoading ? 'Updating...' : 'Update password'}
+            </button>
+          </form>
+        )}
+
+        {/* ── PASSWORD UPDATED SUCCESS ── */}
+        {isRecoveryMode && passwordUpdated && (
+          <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', padding: '2.5rem', borderRadius: '1rem', boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)', textAlign: 'center' }}>
+            <div style={{ margin: '0 auto 1.5rem', height: '4rem', width: '4rem', backgroundColor: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '1.75rem' }}>✓</span>
+            </div>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', marginBottom: '0.5rem' }}>Password updated!</h3>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Redirecting you to sign in...</p>
+          </div>
+        )}
+
+        {/* ── REQUEST RESET (default) ── */}
+        {!isRecoveryMode && !requestSent && (
+          <form onSubmit={handleRequestReset} style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', padding: '2.5rem', borderRadius: '1rem', boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div>
+              <label htmlFor="email" style={labelStyle}>Email address</label>
+              <div style={{ position: 'relative' }}>
+                <EnvelopeIcon style={{ position: 'absolute', top: '50%', left: '0.75rem', transform: 'translateY(-50%)', height: '1.25rem', width: '1.25rem', color: '#9ca3af', pointerEvents: 'none' }} />
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setEmailError(''); }}
+                  style={{ ...inputStyle(!!emailError), paddingLeft: '2.5rem' }}
+                  placeholder="Enter your email"
+                />
+              </div>
+              {emailError && <p style={errorStyle}>{emailError}</p>}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '0.875rem 1rem', border: 'none', borderRadius: '0.5rem', fontSize: '1rem', fontWeight: '600', color: 'white', backgroundColor: isLoading ? '#9ca3af' : '#667eea', cursor: isLoading ? 'not-allowed' : 'pointer', transition: 'background-color 0.2s' }}
+              onMouseOver={(e) => { if (!isLoading) e.currentTarget.style.backgroundColor = '#5568d3'; }}
+              onMouseOut={(e) => { if (!isLoading) e.currentTarget.style.backgroundColor = '#667eea'; }}
+            >
+              {isLoading ? 'Sending...' : 'Send reset link'}
+            </button>
+
             <div style={{ textAlign: 'center' }}>
-              <Link
-                to="/login"
-                style={{ display: 'inline-flex', alignItems: 'center', fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.9)', textDecoration: 'none' }}
-              >
+              <Link to="/login" style={{ display: 'inline-flex', alignItems: 'center', fontSize: '0.875rem', color: '#667eea', textDecoration: 'none' }}>
                 <ArrowLeftIcon style={{ height: '1rem', width: '1rem', marginRight: '0.25rem' }} />
                 Back to sign in
               </Link>
             </div>
           </form>
-        ) : (
-          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ margin: '0 auto', height: '4rem', width: '4rem', backgroundColor: 'rgba(34, 197, 94, 0.2)', backdropFilter: 'blur(10px)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <EnvelopeIcon style={{ height: '2rem', width: '2rem', color: '#22c55e' }} />
+        )}
+
+        {/* ── RESET EMAIL SENT ── */}
+        {!isRecoveryMode && requestSent && (
+          <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', padding: '2.5rem', borderRadius: '1rem', boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ margin: '0 auto', height: '4rem', width: '4rem', backgroundColor: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <EnvelopeIcon style={{ height: '2rem', width: '2rem', color: '#16a34a' }} />
             </div>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'white' }}>
-              Check your email
-            </h3>
-            <p style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-              We've sent a password reset link to{' '}
-              <span style={{ fontWeight: '500', color: 'white' }}>{email}</span>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>Check your email</h3>
+            <p style={{ color: '#6b7280' }}>
+              We sent a password reset link to{' '}
+              <span style={{ fontWeight: '600', color: '#111827' }}>{email}</span>
             </p>
-            <p style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-              Didn't receive the email? Check your spam folder or{' '}
-              <button
-                onClick={() => setSuccess(false)}
-                style={{ color: 'rgba(255, 255, 255, 0.9)', fontWeight: '500', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-              >
+            <p style={{ fontSize: '0.875rem', color: '#9ca3af' }}>
+              Didn't get it? Check your spam folder or{' '}
+              <button onClick={() => setRequestSent(false)} style={{ color: '#667eea', fontWeight: '500', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
                 try again
               </button>
             </p>
-            <div style={{ paddingTop: '1rem' }}>
-              <Link
-                to="/login"
-                style={{ display: 'inline-flex', alignItems: 'center', fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.9)', textDecoration: 'none' }}
-              >
-                <ArrowLeftIcon style={{ height: '1rem', width: '1rem', marginRight: '0.25rem' }} />
-                Back to sign in
-              </Link>
-            </div>
+            <Link to="/login" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.875rem', color: '#667eea', textDecoration: 'none' }}>
+              <ArrowLeftIcon style={{ height: '1rem', width: '1rem', marginRight: '0.25rem' }} />
+              Back to sign in
+            </Link>
           </div>
         )}
+
       </div>
     </div>
   );
