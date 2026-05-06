@@ -80,7 +80,7 @@ export const OTPVerificationPage: React.FC = () => {
     const { error } = await supabase.auth.verifyOtp({
       email,
       token: otp.join(''),
-      type: 'email',
+      type: 'signup',
     });
 
     setIsLoading(false);

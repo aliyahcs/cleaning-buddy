@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ChevronRightIcon, 
-  ChevronLeftIcon, 
+import {
+  ChevronRightIcon,
+  ChevronLeftIcon,
   CheckCircleIcon,
   HomeIcon,
   BellIcon
 } from '@heroicons/react/24/outline';
-import { api } from '../lib/api';
+import { supabase } from '../lib/supabase';
 
 interface QuizQuestion {
   id: number;
@@ -107,9 +107,11 @@ const quizQuestions: QuizQuestion[] = [
 ];
 
 const dwellingTypes = [
-  { id: 1, name: 'Apartment', description: 'Multi-unit residential dwelling with shared walls' },
-  { id: 2, name: 'House', description: 'Single-family residential dwelling' },
-  { id: 3, name: 'Studio', description: 'Single-room living space with combined areas' }
+  { id: 1, name: 'Studio',              description: 'Open-plan single room serving as bedroom, living, and kitchen area' },
+  { id: 2, name: '1-Bedroom Apartment', description: 'One bedroom with separate living room, kitchen, and bathroom' },
+  { id: 3, name: '2-Bedroom Apartment', description: 'Two bedrooms with shared living areas' },
+  { id: 4, name: '3-Bedroom House',     description: 'Three-bedroom home with full living areas' },
+  { id: 5, name: '4+ Bedroom House',    description: 'Large home with four or more bedrooms' },
 ];
 
 const rooms = [
@@ -140,6 +142,8 @@ export const InitialSetupFlow: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState('09:00');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [setupError, setSetupError] = useState('');
 
   const calculateScore = () => {
     const totalScore = Object.values(quizAnswers).reduce((sum, score) => sum + score, 0);
@@ -166,27 +170,68 @@ export const InitialSetupFlow: React.FC = () => {
     }
   };
 
+  const categoryIdMap: { [key: string]: number } = {
+    'Minimalist Maintainer': 1,
+    'Casual Cleaner': 2,
+    'Routine Ready': 3,
+    'Neat Freak': 4,
+    'Spotless Specialist': 5,
+  };
+
   const completeSetup = async () => {
+    setIsCompleting(true);
+    setSetupError('');
+
     try {
-      // Save each quiz response to the API
-      for (const [questionId, answerValue] of Object.entries(quizAnswers)) {
-        try {
-          await api.createQuizResponse({
-            user_id: 1, // TODO: Use actual user ID from auth
-            question_id: parseInt(questionId),
-            option_id: answerValue // TODO: This should be the actual option_id, not the value
-          });
-        } catch (error) {
-          console.error('Failed to save quiz response for question', questionId);
-        }
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        navigate('/login');
+        return;
       }
 
-      // Navigate to dashboard after saving
+      const score = calculateScore();
+      const category = getScoreCategory(score);
+
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .upsert({
+          user_id: user.id,
+          dwelling_type_id: selectedDwelling,
+          selected_cleaning_weekday: selectedDay,
+          selected_cleaning_time: selectedTime,
+          neat_freak_score: score,
+          neat_freak_category_id: categoryIdMap[category.name],
+          quiz_completed_at: new Date().toISOString(),
+          onboarding_completed_at: new Date().toISOString(),
+        });
+
+      if (profileError) throw profileError;
+
+      await supabase.from('user_room_priorities').delete().eq('user_id', user.id);
+
+      for (let i = 0; i < selectedRooms.length; i++) {
+        const { error: priorityError } = await supabase
+          .from('user_room_priorities')
+          .insert({ user_id: user.id, room_id: selectedRooms[i], priority_rank: i + 1 });
+        if (priorityError) throw priorityError;
+      }
+
+      const { error: notifError } = await supabase
+        .from('user_notification_preferences')
+        .upsert({
+          user_id: user.id,
+          enable_push: notificationsEnabled,
+          enable_in_app: notificationsEnabled,
+        });
+
+      if (notifError) throw notifError;
+
       navigate('/dashboard');
-    } catch (error) {
-      console.error('Error saving quiz responses:', error);
-      // Still navigate even if save fails for now
-      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Error completing setup:', error);
+      setSetupError('Failed to save setup. Please try again.');
+    } finally {
+      setIsCompleting(false);
     }
   };
 
@@ -538,26 +583,41 @@ export const InitialSetupFlow: React.FC = () => {
           </button>
 
           {currentStep === 6 ? (
-            <button
-              onClick={completeSetup}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '0.75rem 1.5rem',
-                border: 'none',
-                borderRadius: '0.375rem',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                color: 'white',
-                backgroundColor: '#16a34a',
-                cursor: 'pointer'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#15803d'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#16a34a'}
-            >
-              <CheckCircleIcon style={{ height: '1rem', width: '1rem', marginRight: '0.5rem' }} />
-              Complete Setup
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+              {setupError && (
+                <p style={{ fontSize: '0.875rem', color: '#dc2626' }}>{setupError}</p>
+              )}
+              <button
+                onClick={completeSetup}
+                disabled={isCompleting}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0.75rem 1.5rem',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: 'white',
+                  backgroundColor: isCompleting ? '#86efac' : '#16a34a',
+                  cursor: isCompleting ? 'not-allowed' : 'pointer'
+                }}
+                onMouseOver={(e) => { if (!isCompleting) e.currentTarget.style.backgroundColor = '#15803d'; }}
+                onMouseOut={(e) => { if (!isCompleting) e.currentTarget.style.backgroundColor = '#16a34a'; }}
+              >
+                {isCompleting ? (
+                  <>
+                    <div style={{ width: '1rem', height: '1rem', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', marginRight: '0.5rem' }} />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircleIcon style={{ height: '1rem', width: '1rem', marginRight: '0.5rem' }} />
+                    Complete Setup
+                  </>
+                )}
+              </button>
+            </div>
           ) : (
             <button
               onClick={nextStep}
