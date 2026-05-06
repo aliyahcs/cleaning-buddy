@@ -8,6 +8,7 @@ import {
   ClockIcon
 } from '@heroicons/react/24/outline';
 import { supabase } from '../lib/supabase';
+import { notificationService } from '../lib/notifications';
 
 const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const dwellingTypeIdMap: Record<string, number> = { 'Apartment': 1, 'House': 2, 'Studio': 3 };
@@ -103,11 +104,20 @@ export const Settings: React.FC = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      
+      // Save to database
       await supabase.from('user_notification_preferences').upsert({
         user_id: user.id,
         enable_push: userProfile.notifications.pushEnabled,
         enable_in_app: userProfile.notifications.inAppEnabled,
+        sound_id: userProfile.notifications.soundId,
       });
+      
+      // Update notification service settings
+      if (userProfile.notifications.pushEnabled && notificationService.isSupported()) {
+        await notificationService.requestPermission();
+      }
+      
       alert('Notification preferences saved!');
     } catch (err) {
       alert('Failed to save notifications.');
