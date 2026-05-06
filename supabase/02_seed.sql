@@ -174,72 +174,17 @@ INSERT INTO cleaning_tips (tip_id, title, tip_text, display_order) VALUES
 (5, 'Have towels on hand', 'Keep cleaning towels readily available to wipe up spills immediately', 5),
 (6, 'Replenish your cleaning supplies', 'Restock cleaning supplies before you run out to avoid interruptions', 6);
 
--- 7. Sample Users with Profiles
-INSERT INTO users (user_id, email, password_hash, first_name, last_name, time_zone, locale, created_at, updated_at) VALUES
-(1, 'john.doe@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkKOY.yqT5uK5vK5Z9v5Z9v5Z9v5Z9v5Z9v', 'John', 'Doe', 'America/New_York', 'en-US', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, 'jane.smith@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkKOY.yqT5uK5vK5Z9v5Z9v5Z9v5Z9v5Z9v', 'Jane', 'Smith', 'America/Los_Angeles', 'en-US', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, 'mike.johnson@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkKOY.yqT5uK5vK5Z9v5Z9v5Z9v5Z9v5Z9v', 'Mike', 'Johnson', 'Europe/London', 'en-GB', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+-- Note: User rows (users, user_profiles, user_quiz_responses, user_room_priorities,
+-- user_notification_preferences) are not seeded here. Users are created through
+-- Supabase Auth — user_id is a UUID from auth.users(id), not an integer.
 
-INSERT INTO user_profiles (user_id, dwelling_type_id, selected_cleaning_weekday, selected_cleaning_time, neat_freak_score, neat_freak_category_id, quiz_completed_at, onboarding_completed_at, created_at, updated_at) VALUES
-(1, 2, 6, '09:00:00', 65, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, 1, 0, '10:00:00', 35, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, 3, 3, '18:00:00', 80, 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
--- Sample Quiz Responses for User 1 (John - Neat Freak)
-INSERT INTO user_quiz_responses (response_id, user_id, question_id, option_id, created_at) VALUES
-(1, 1, 1, 2, CURRENT_TIMESTAMP), -- 2-3 times per week (75 points)
-(2, 1, 2, 2, CURRENT_TIMESTAMP), -- 2-3 times per week (75 points)
-(3, 1, 3, 2, CURRENT_TIMESTAMP), -- 2-3 times per week (50 points)
-(4, 1, 4, 2, CURRENT_TIMESTAMP), -- Daily (75 points)
-(5, 1, 5, 2, CURRENT_TIMESTAMP), -- Every 2-3 days (75 points)
-(6, 1, 6, 2, CURRENT_TIMESTAMP), -- Within a few hours (75 points)
-(7, 1, 7, 2, CURRENT_TIMESTAMP), -- Every 2 weeks (75 points)
-(8, 1, 8, 2, CURRENT_TIMESTAMP); -- Weekly (75 points)
-
--- Sample Quiz Responses for User 2 (Jane - Casual Cleaner)
-INSERT INTO user_quiz_responses (response_id, user_id, question_id, option_id, created_at) VALUES
-(9, 2, 1, 3, CURRENT_TIMESTAMP), -- Once a week (50 points)
-(10, 2, 2, 3, CURRENT_TIMESTAMP), -- Once a week (50 points)
-(11, 2, 3, 3, CURRENT_TIMESTAMP), -- 2-3 times per week (50 points)
-(12, 2, 4, 3, CURRENT_TIMESTAMP), -- Once a day (50 points)
-(13, 2, 5, 3, CURRENT_TIMESTAMP), -- Weekly (50 points)
-(14, 2, 6, 3, CURRENT_TIMESTAMP), -- By the end of the day (50 points)
-(15, 2, 7, 3, CURRENT_TIMESTAMP), -- Monthly (50 points)
-(16, 2, 8, 3, CURRENT_TIMESTAMP); -- Every 2 weeks (50 points)
-
--- Sample Quiz Responses for User 3 (Mike - Spotless Specialist)
-INSERT INTO user_quiz_responses (response_id, user_id, question_id, option_id, created_at) VALUES
-(17, 3, 1, 1, CURRENT_TIMESTAMP), -- Daily (100 points)
-(18, 3, 2, 1, CURRENT_TIMESTAMP), -- 2-3 times per week (100 points)
-(19, 3, 3, 1, CURRENT_TIMESTAMP), -- After every use (100 points)
-(20, 3, 4, 1, CURRENT_TIMESTAMP), -- After every meal (100 points)
-(21, 3, 5, 1, CURRENT_TIMESTAMP), -- Daily (100 points)
-(22, 3, 6, 1, CURRENT_TIMESTAMP), -- Immediately (100 points)
-(23, 3, 7, 1, CURRENT_TIMESTAMP), -- Weekly (100 points)
-(24, 3, 8, 1, CURRENT_TIMESTAMP); -- 2-3 times per week (100 points)
-
--- 8. Room Priorities for Users
-INSERT INTO user_room_priorities (user_id, room_id, priority_rank, created_at) VALUES
-(1, 1, 1, CURRENT_TIMESTAMP), -- John prioritizes Kitchen
-(1, 2, 2, CURRENT_TIMESTAMP), -- John prioritizes Bathroom second
-(2, 3, 1, CURRENT_TIMESTAMP), -- Jane prioritizes Bedroom
-(2, 1, 2, CURRENT_TIMESTAMP), -- Jane prioritizes Kitchen second
-(3, 4, 1, CURRENT_TIMESTAMP), -- Mike prioritizes Living Room
-(3, 5, 2, CURRENT_TIMESTAMP); -- Mike prioritizes Laundry second
-
--- 9. Notification Sounds
+-- 7. Notification Sounds
 INSERT INTO notification_sounds (sound_id, sound_name, file_uri, is_active) VALUES
 (1, 'Default Chime', '/sounds/default-chime.mp3', TRUE),
 (2, 'Gentle Bell', '/sounds/gentle-bell.mp3', TRUE),
 (3, 'Soft Alert', '/sounds/soft-alert.mp3', TRUE);
 
--- 10. User Notification Preferences
-INSERT INTO user_notification_preferences (user_id, enable_push, enable_in_app, sound_id, reminder_time, created_at, updated_at) VALUES
-(1, TRUE, TRUE, 1, '08:00:00', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, TRUE, FALSE, 2, '09:00:00', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, FALSE, TRUE, 3, '10:00:00', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
--- 11. Dwelling Type Room Mappings
+-- 8. Dwelling Type Room Mappings
 INSERT INTO dwelling_type_rooms (dwelling_type_id, room_id, is_default) VALUES
 -- Apartment defaults
 (1, 1, TRUE), -- Kitchen
