@@ -1,8 +1,10 @@
 # Cleaning Buddy - Development Tasks
 
+> **Status key:** ✅ Complete | ⚠️ Partial | ❌ Not implemented
+
 ## Authentication & User Management
 
-### Task 1: User Registration System
+### Task 1: User Registration System ✅
 **User Stories:** 1
 **Description:** Implement user account creation so users can save their cleaning preferences and history.
 
@@ -11,7 +13,7 @@
 - User profile is created upon registration
 - Error handling for duplicate accounts
 
-### Task 2: User Login System
+### Task 2: User Login System ✅
 **User Stories:** 2
 **Description:** Create login functionality so users can access their saved cleaning schedules and settings.
 
@@ -20,7 +22,7 @@
 - Session is maintained across visits
 - Error handling for invalid login attempts
 
-### Task 3: Password Reset System
+### Task 3: Password Reset System ✅
 **User Stories:** 16
 **Description:** Implement password reset functionality for users who forget their password.
 
@@ -31,7 +33,7 @@
 
 ## Initial Setup
 
-### Task 4: Neat Freak Score Quiz
+### Task 4: Neat Freak Score Quiz ✅
 **User Stories:** (Custom Feature - Initial Setup)
 **Description:** Create quiz that assigns users a cleanliness rating from 0-100.
 
@@ -45,7 +47,7 @@
   - 81-100: Spotless Specialist
 - Score is saved to user profile
 
-### Task 5: Dwelling Type Selection
+### Task 5: Dwelling Type Selection ✅
 **User Stories:** 3
 **Description:** Allow users to select their dwelling type and which rooms apply to them.
 
@@ -54,7 +56,7 @@
 - Room selection is saved to user profile
 - Only selected rooms appear in the app
 
-### Task 6: Priority Room Selection
+### Task 6: Priority Room Selection ✅
 **User Stories:** 5
 **Description:** Let users prioritize their top 2 most important cleaning areas during setup.
 
@@ -63,7 +65,7 @@
 - Priority rooms are visually indicated in the app
 - Users can update priorities in settings
 
-### Task 7: Cleaning Day Selection
+### Task 7: Cleaning Day Selection ✅
 **User Stories:** 4, 8
 **Description:** Allow users to choose their weekly cleaning day.
 
@@ -74,7 +76,7 @@
 
 ## Task Management
 
-### Task 8: Room-Based Task Checklists
+### Task 8: Room-Based Task Checklists ✅
 **User Stories:** 6, 7
 **Description:** Create predefined task checklists for each room that users can complete.
 
@@ -88,7 +90,8 @@
 - Room is only marked complete when ALL tasks are checked
 - Task completion is tracked and saved
 
-### Task 9: Task Postponement Feature
+### Task 9: Task Postponement Feature ⚠️
+> Note: Implemented with a date picker (any future date) rather than the two fixed options specified. Core behavior is the same.
 **User Stories:** 4
 **Description:** Allow users to postpone cleaning with only two options available.
 
@@ -98,7 +101,7 @@
 - No other postponement timeframes allowed
 - Postponed tasks show updated due dates
 
-### Task 10: Task Completion Tracking
+### Task 10: Task Completion Tracking ✅
 **User Stories:** 7
 **Description:** Track which tasks have been completed and which need to be done.
 
@@ -109,7 +112,7 @@
 
 ## Dashboard & Progress
 
-### Task 11: Overview Dashboard
+### Task 11: Overview Dashboard ✅
 **User Stories:** 9
 **Description:** Create main dashboard showing pending, overdue, and completed tasks.
 
@@ -119,7 +122,7 @@
 - Completed tasks are displayed
 - User can quickly see task status at a glance
 
-### Task 12: Cleanliness Health Score
+### Task 12: Cleanliness Health Score ✅
 **User Stories:** 14
 **Description:** Calculate and display weekly cleanliness health score based on task completion.
 
@@ -129,7 +132,7 @@
 - Score is categorized by cleaning type (kitchen, bathroom, etc.)
 - Score includes priority tracking
 
-### Task 13: Share Score Feature
+### Task 13: Share Score Feature ✅
 **User Stories:** (Custom Feature)
 **Description:** Allow users to share their cleanliness health score.
 
@@ -138,7 +141,7 @@
 - Score is formatted with breakdown
 - Users decide when and where to share (not automatic)
 
-### Task 14: Analytics Page
+### Task 14: Analytics Page ✅
 **User Stories:** 14
 **Description:** Create analytics page showing what tasks were completed and what needs improvement.
 
@@ -149,7 +152,8 @@
 
 ## Notifications & Reminders
 
-### Task 15: Push Notifications
+### Task 15: Push Notifications ⚠️
+> Note: Implemented using Web Notifications API with service worker. Fires at scheduled cleaning time when the app is open or running in the background as a PWA. Full server-side Web Push (app-closed delivery) not implemented.
 **User Stories:** 18
 **Description:** Send push notifications for upcoming cleaning tasks.
 
@@ -158,7 +162,8 @@
 - Notification is sent at user-configured time
 - Users can enable/disable notifications in settings
 
-### Task 16: In-App Reminders
+### Task 16: In-App Reminders ⚠️
+> Note: Notification preferences (push on/off, in-app on/off) are implemented and synced across devices. A dedicated cleaning-day popup is not implemented.
 **User Stories:** 8
 **Description:** Show in-app popup reminders for tasks due today.
 
@@ -169,7 +174,7 @@
 
 ## Additional Features
 
-### Task 17: Cleaning Tips Page
+### Task 17: Cleaning Tips Page ✅
 **User Stories:** 11
 **Description:** Create a page with cleaning tips and best practices.
 
@@ -184,7 +189,7 @@
   - Replenish your cleaning supplies
 - Tips are easy to read
 
-### Task 18: Calendar Integration
+### Task 18: Calendar Integration ❌
 **User Stories:** 10
 **Description:** Integrate cleaning tasks with Google Calendar and Apple Calendar.
 
@@ -193,7 +198,7 @@
 - Users can connect their Apple Calendar
 - Cleaning day appears as calendar event
 
-### Task 19: Offline Access
+### Task 19: Offline Access ❌
 **User Stories:** 13
 **Description:** Enable users to access their checklist without internet and sync later.
 
@@ -202,7 +207,7 @@
 - Users can check off tasks without internet
 - Changes sync when connection is restored
 
-### Task 20: Help & FAQs
+### Task 20: Help & FAQs ✅
 **User Stories:** 15
 **Description:** Create help section so users can solve common issues without contacting support.
 
@@ -211,7 +216,7 @@
 - Help documentation for key features
 - Easy to navigate and search
 
-### Task 21: Localization Support
+### Task 21: Localization Support ❌
 **User Stories:** 12
 **Description:** Support different languages and timezones.
 

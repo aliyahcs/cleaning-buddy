@@ -430,8 +430,8 @@ export const Settings: React.FC = () => {
                     <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827', marginTop: '1rem' }}>Cleaning Buddy</h3>
                     <p style={{ color: '#4b5563', marginTop: '0.5rem' }}>Version 1.0.0</p>
                     <p style={{ color: '#4b5563' }}>
-                      Your personal assistant for maintaining a clean and organized home. 
-                      Built with React, TypeScript, and Tailwind CSS.
+                      Your personal assistant for maintaining a clean and organized home.
+                      Built with React, TypeScript, Express, and Supabase.
                     </p>
                   </div>
 

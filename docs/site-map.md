@@ -1,183 +1,101 @@
-# Cleaning Buddy - Site Map & Navigation Structure
+# Cleaning Buddy - Site Map
 
-## 1. Primary Navigation
+## Pages & Routes
 
-### 1.1 Bottom Navigation (Mobile)
-- **Home** - Dashboard with today's tasks and quick stats
-- **Tasks** - List view of all tasks with filtering options
-- **Calendar** - Calendar view of scheduled tasks
-- **Add** - Floating action button for quick task creation
-- **Profile** - User settings and preferences
+| Route | Page | Auth Required |
+|---|---|---|
+| `/` | Landing page | No (redirects to `/dashboard` if logged in) |
+| `/login` | Login | No (redirects to `/dashboard` if logged in) |
+| `/register` | Register | No (redirects to `/dashboard` if logged in) |
+| `/otp-verification?email=` | Email OTP verification | No |
+| `/reset-password` | Password reset | No |
+| `/setup` | Initial setup flow | No |
+| `/dashboard` | Dashboard | Yes |
+| `/tasks` | My Tasks | Yes |
+| `/room-checklists` | Room Checklists | Yes |
+| `/analytics` | Analytics | Yes |
+| `/tips` | Cleaning Tips | Yes |
+| `/settings` | Settings | Yes |
+| `/help` | Help & FAQs | Yes |
+| `*` | Catch-all redirect → `/` | — |
 
-### 1.2 Sidebar Navigation (Desktop/Tablet)
-- **Dashboard** - Main overview page
-- **Tasks**
-  - All Tasks
-  - Today
-  - Upcoming
-  - Completed
-  - By Category
-- **Calendar**
-  - Month View
-  - Week View
-  - Day View
-- **Categories** - Manage task categories
-- **Analytics** - Cleaning statistics and reports
-- **Settings** - App configuration and preferences
+---
 
-## 2. Page Hierarchy
+## Page Descriptions
 
-### 2.1 Dashboard (/)
-- **Quick Stats**: Tasks due today, weekly progress, streak counter
-- **Today's Tasks**: List of tasks scheduled for today
-- **Recent Activity**: Recently completed tasks
-- **Quick Actions**: Add task, view calendar, see analytics
-- **Upcoming Tasks**: Next 3-5 upcoming tasks
+### Landing (`/`)
+Marketing landing page. Redirects authenticated users to `/dashboard`.
 
-### 2.2 Tasks (/tasks)
-#### List View (/tasks)
-- **Filter Bar**: Status, category, priority, date range
-- **Sort Options**: Due date, priority, category, created date
-- **Task Cards**: Title, category, priority, due date, status
-- **Bulk Actions**: Mark multiple tasks, delete, change category
+### Login (`/login`)
+Email + password login form with "Forgot password" link → `/reset-password`.
 
-#### Task Detail (/tasks/:id)
-- **Task Information**: Title, description, category, priority
-- **Scheduling**: Due date, recurring settings
-- **Time Tracking**: Estimated vs actual time
-- **Actions**: Edit, delete, mark complete, duplicate
-- **History**: Task status changes and completion history
+### Register (`/register`)
+Email, password, first/last name. On success navigates to `/otp-verification`.
 
-#### Create/Edit Task (/tasks/new, /tasks/:id/edit)
-- **Basic Info**: Title, description, category selection
-- **Scheduling**: Due date picker, recurring options
-- **Priority**: Low, Medium, High selection
-- **Time Estimation**: Estimated duration
-- **Save/Cancel**: Form actions
+### OTP Verification (`/otp-verification?email=`)
+6-digit code entry with countdown timer (5 min), paste support, resend option. On success navigates to `/setup`.
 
-### 2.3 Calendar (/calendar)
-#### Month View (/calendar?view=month)
-- **Monthly Calendar**: Full month grid with task indicators
-- **Task Preview**: Hover/click to see task details
-- **Navigation**: Previous/next month, today button
-- **Mini Calendar**: Quick date selection
+### Password Reset (`/reset-password`)
+Email entry to receive a reset link via Supabase Auth.
 
-#### Week View (/calendar?view=week)
-- **Weekly Grid**: 7-day view with time slots
-- **Task Blocks**: Visual task representations
-- **Drag & Drop**: Reschedule tasks by dragging
+### Initial Setup Flow (`/setup`)
+Multi-step wizard:
+1. Cleanliness quiz (8 questions → Neat Freak Score 0–100, one of 5 categories)
+2. Dwelling type selection (Studio, Apartment, House)
+3. Priority room selection (top 2 rooms)
+4. Cleaning day + time selection
 
-#### Day View (/calendar?view=day)
-- **Daily Schedule**: Hour-by-hour task timeline
-- **Task Details**: Expanded task information
-- **Time Management**: Visual time allocation
+### Dashboard (`/dashboard`)
+- Priority room cards with live completion counts
+- Total tasks and completed tasks across all rooms
+- Link to Room Checklists
 
-### 2.4 Categories (/categories)
-#### Category List (/categories)
-- **Category Cards**: Name, color, icon, task count
-- **Add Category**: Create new category button
-- **Edit/Delete**: Manage existing categories
+### My Tasks (`/tasks`)
+- One card per room showing task count and completion count
+- Links to Room Checklists filtered to each room
 
-#### Category Detail (/categories/:id)
-- **Category Info**: Name, description, color, icon
-- **Tasks in Category**: List of all tasks
-- **Statistics**: Completion rate, time spent
-- **Edit Category**: Modify category details
+### Room Checklists (`/room-checklists`)
+- Room selector (Kitchen, Bathroom, Bedroom, Living Room, Laundry)
+- Task list with checkboxes per room (36 tasks total)
+- Postpone button per task (opens date picker)
+- Quick-add custom tasks per room (synced to DB)
+- Tip tasks applied from the Tips page appear here
 
-### 2.5 Analytics (/analytics)
-#### Overview (/analytics)
-- **Summary Cards**: Total tasks, completion rate, time spent
-- **Charts**: Completion trends, category distribution
-- **Time Period**: Week, month, quarter, year selectors
+### Analytics (`/analytics`)
+- Weekly Health Score (from Neat Freak quiz)
+- Tasks This Week count
+- Room Performance — per-room completion progress bars
+- Monthly Trends — bar chart of completion % for last 6 months
 
-#### Detailed Reports (/analytics/reports)
-- **Task Completion**: Detailed completion statistics
-- **Time Analysis**: Time spent by category and task
-- **Productivity**: Daily/weekly productivity patterns
-- **Export Options**: Download reports as PDF/CSV
+### Tips (`/tips`)
+- Cleaning tips library
+- Each tip can be applied as a custom task to a specific room
 
-### 2.6 Profile & Settings
-#### User Profile (/profile)
-- **User Information**: Name, email, avatar
-- **Preferences**: Theme, notifications, default views
-- **Statistics**: Personal cleaning achievements
+### Settings (`/settings`)
+Three tabs:
+- **Profile**: First/last name, email (read-only), cleaning day, cleaning time, dwelling type, priority rooms (read-only), Save Profile, Sign Out
+- **Notifications**: Push on/off, in-app on/off, sound selection, reminder time display, Save Notifications
+- **About**: App info, version, features list
 
-#### Settings (/settings)
-- **Notifications**: Push notification preferences
-- **Appearance**: Theme selection, font size
-- **Data & Privacy**: Export data, delete account
-- **About**: App version, help, support
+### Help (`/help`)
+FAQs and usage documentation.
 
-## 3. Modal & Overlay Components
+---
 
-### 3.1 Quick Add Task Modal
-- **Simplified Form**: Title, category, due date
-- **Smart Suggestions**: Category and time suggestions
-- **Quick Save**: One-click task creation
+## Navigation
 
-### 3.2 Task Completion Modal
-- **Completion Confirmation**: Mark task as complete
-- **Time Tracking**: Actual time spent
-- **Notes**: Add completion notes
-- **Next Task**: Quick navigation to next task
+All authenticated pages share a top header nav:
+**Cleaning Buddy logo** → Dashboard | My Tasks | Checklists | Analytics | Tips | Settings | Help | **Sign Out**
 
-### 3.3 Filter & Sort Modal
-- **Filter Options**: Status, category, priority, date
-- **Sort Options**: Multiple sort criteria
-- **Save Filters**: Save frequently used filter combinations
+The active page is highlighted in the nav.
 
-## 4. Navigation Patterns
+---
 
-### 4.1 Mobile Navigation
-- **Bottom Tab Bar**: Primary navigation
-- **Swipe Gestures**: Navigate between calendar views
-- **Pull to Refresh**: Update task lists
-- **Long Press**: Context menus for tasks
+## Auth Flow
 
-### 4.2 Desktop Navigation
-- **Sidebar**: Primary navigation with expandable sections
-- **Breadcrumb Navigation**: Show current page hierarchy
-- **Keyboard Shortcuts**: Quick access to common actions
-- **Right-click Context Menus**: Task actions
-
-## 5. Deep Links & URLs
-
-### 5.1 Task URLs
-- `/tasks` - All tasks
-- `/tasks/today` - Today's tasks
-- `/tasks/upcoming` - Upcoming tasks
-- `/tasks/completed` - Completed tasks
-- `/tasks/category/:categoryId` - Tasks by category
-- `/tasks/:id` - Specific task detail
-
-### 5.2 Calendar URLs
-- `/calendar` - Default (month) view
-- `/calendar?view=week` - Week view
-- `/calendar?view=day` - Day view
-- `/calendar?date=2024-03-15` - Specific date
-
-### 5.3 Other URLs
-- `/categories` - Categories list
-- `/categories/:id` - Category detail
-- `/analytics` - Analytics overview
-- `/profile` - User profile
-- `/settings` - App settings
-
-## 6. Responsive Design Considerations
-
-### 6.1 Mobile (< 768px)
-- **Single Column Layout**: Stack all content vertically
-- **Bottom Navigation**: Primary navigation method
-- **Touch Targets**: Minimum 44px touch targets
-- **Swipe Navigation**: Gesture-based navigation
-
-### 6.2 Tablet (768px - 1024px)
-- **Two Column Layout**: Sidebar + main content
-- **Hybrid Navigation**: Combination of sidebar and tabs
-- **Touch & Mouse**: Support both input methods
-
-### 6.3 Desktop (> 1024px)
-- **Multi-column Layout**: Optimize screen real estate
-- **Sidebar Navigation**: Full sidebar with all options
-- **Keyboard Navigation**: Full keyboard accessibility
-- **Hover States**: Rich interaction feedback
+```
+Register → OTP Verification → Setup → Dashboard
+Login → Dashboard
+Forgot Password → Password Reset email → /reset-password (link from email)
+Any page → Sign Out → /login
+```
