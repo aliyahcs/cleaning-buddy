@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
+import {
   PlusIcon,
   ChevronRightIcon,
   CheckCircleIcon,
-  ClockIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import { supabase } from '../lib/supabase';
@@ -32,12 +31,16 @@ export const MyTasks: React.FC = () => {
         const taskCounts: Record<number, number> = {};
         taskData!.forEach((t: any) => { taskCounts[t.room_id] = (taskCounts[t.room_id] || 0) + 1; });
 
-        // Read completion state from localStorage (written by RoomChecklists)
+        // Read task totals + completion state from localStorage (includes quick-added tasks)
         const completedCounts: Record<number, number> = {};
         try {
           const saved = localStorage.getItem('roomChecklists');
           if (saved) {
             JSON.parse(saved).forEach((room: any) => {
+              const localTotal = room.tasks.length;
+              if (localTotal > (taskCounts[room.id] || 0)) {
+                taskCounts[room.id] = localTotal;
+              }
               completedCounts[room.id] = room.tasks.filter((t: any) => t.completed).length;
             });
           }
@@ -54,7 +57,6 @@ export const MyTasks: React.FC = () => {
             totalTasks: total,
             completedTasks: completed,
             status: total > 0 ? (completed >= total ? 'completed' : completed > 0 ? 'in-progress' : 'pending') : 'pending',
-            nextScheduled: 'TBD'
           };
         }));
       } catch (err) {
@@ -235,13 +237,6 @@ export const MyTasks: React.FC = () => {
                       <div style={{ height: '1rem', width: '1rem', marginRight: '0.5rem', backgroundColor: '#3b82f6', borderRadius: '9999px' }} />
                       <span>Remaining: {room.totalTasks - room.completedTasks}</span>
                     </div>
-
-                    {room.nextScheduled && (
-                      <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.875rem', color: '#4b5563' }}>
-                        <ClockIcon style={{ height: '1rem', width: '1rem', marginRight: '0.5rem', color: '#6b7280' }} />
-                        <span>Next: {room.nextScheduled}</span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Action Button */}
