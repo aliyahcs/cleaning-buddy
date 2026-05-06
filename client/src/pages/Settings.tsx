@@ -4,8 +4,6 @@ import {
   UserIcon,
   BellIcon,
   Cog6ToothIcon,
-  GlobeAltIcon,
-  ShieldCheckIcon,
   DocumentTextIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
@@ -121,7 +119,6 @@ export const Settings: React.FC = () => {
   const tabs = [
     { id: 'profile', name: 'Profile', icon: UserIcon },
     { id: 'notifications', name: 'Notifications', icon: BellIcon },
-    { id: 'privacy', name: 'Privacy', icon: ShieldCheckIcon },
     { id: 'about', name: 'About', icon: DocumentTextIcon }
   ];
 
@@ -384,53 +381,6 @@ export const Settings: React.FC = () => {
               </div>
             )}
 
-            {activeTab === 'privacy' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827' }}>Privacy Settings</h2>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <ShieldCheckIcon style={{ height: '1.5rem', width: '1.5rem', color: '#22c55e', marginRight: '0.75rem' }} />
-                      <div>
-                        <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827' }}>Data Privacy</h3>
-                        <p style={{ fontSize: '0.875rem', color: '#4b5563' }}>Your personal data is encrypted and secure</p>
-                      </div>
-                    </div>
-                    <button style={{ color: '#2563eb', fontSize: '0.875rem', fontWeight: '500', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={(e) => e.currentTarget.style.color = '#1d4ed8'} onMouseOut={(e) => e.currentTarget.style.color = '#2563eb'}>
-                      Manage Data →
-                    </button>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <GlobeAltIcon style={{ height: '1.5rem', width: '1.5rem', color: '#3b82f6', marginRight: '0.75rem' }} />
-                      <div>
-                        <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827' }}>Location Services</h3>
-                        <p style={{ fontSize: '0.875rem', color: '#4b5563' }}>Control location sharing preferences</p>
-                      </div>
-                    </div>
-                    <button style={{ color: '#2563eb', fontSize: '0.875rem', fontWeight: '500', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={(e) => e.currentTarget.style.color = '#1d4ed8'} onMouseOut={(e) => e.currentTarget.style.color = '#2563eb'}>
-                      Configure →
-                    </button>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <DocumentTextIcon style={{ height: '1.5rem', width: '1.5rem', color: '#a855f7', marginRight: '0.75rem' }} />
-                      <div>
-                        <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827' }}>Analytics Sharing</h3>
-                        <p style={{ fontSize: '0.875rem', color: '#4b5563' }}>Choose what data to share</p>
-                      </div>
-                    </div>
-                    <button style={{ color: '#2563eb', fontSize: '0.875rem', fontWeight: '500', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={(e) => e.currentTarget.style.color = '#1d4ed8'} onMouseOut={(e) => e.currentTarget.style.color = '#2563eb'}>
-                      Configure →
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {activeTab === 'about' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827' }}>About Cleaning Buddy</h2>
@@ -472,14 +422,6 @@ export const Settings: React.FC = () => {
                     </div>
                   </div>
 
-                  <div style={{ backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '0.5rem' }}>
-                    <h4 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827', marginBottom: '0.5rem' }}>Contact & Support</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.875rem', color: '#4b5563' }}>
-                      <p>Email: support@cleaningbuddy.com</p>
-                      <p>Help Center: help.cleaningbuddy.com</p>
-                      <p>Documentation: docs.cleaningbuddy.com</p>
-                    </div>
-                  </div>
                 </div>
               </div>
             )}
