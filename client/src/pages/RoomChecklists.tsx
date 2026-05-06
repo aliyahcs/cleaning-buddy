@@ -38,6 +38,13 @@ const DEFAULT_ROOMS: Room[] = [
   { id: 5, name: 'Laundry', icon: '🧺', tasks: [] },
 ];
 
+const formatDueDate = (iso: string): string => {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) +
+    ' at ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+};
+
 export const RoomChecklists: React.FC = () => {
   const navigate = useNavigate();
   const handleSignOut = async () => { await supabase.auth.signOut(); navigate('/login'); };
@@ -103,7 +110,7 @@ export const RoomChecklists: React.FC = () => {
               name: t.task_name,
               completed: completedIds.has(t.task_template_id),
               postponed: postponedMap.has(t.task_template_id),
-              isOverdue: false,
+              isOverdue: (() => { const d = postponedMap.get(t.task_template_id); return !!d && new Date(d) < new Date(); })(),
               dueDate: postponedMap.get(t.task_template_id),
               isCustom: false,
             }));
@@ -114,7 +121,7 @@ export const RoomChecklists: React.FC = () => {
               name: ct.task_name,
               completed: !!ct.completed && !ct.postponed,
               postponed: !!ct.postponed,
-              isOverdue: false,
+              isOverdue: !!ct.postponed && !!ct.due_date && new Date(ct.due_date) < new Date(),
               dueDate: ct.due_date ?? undefined,
               isCustom: true,
             }));
@@ -189,43 +196,21 @@ export const RoomChecklists: React.FC = () => {
   const handlePostpone = (type: 'tomorrow' | 'next-week' | 'custom') => {
     if (!selectedTask) return;
 
-    let newDueDate = '';
+    let dueDate: Date | null = null;
     if (type === 'tomorrow') {
-      const originalTime = selectedTask.dueDate || 'Tomorrow, 09:00 AM';
-      const timePart = originalTime.split(', ')[1] || '09:00 AM';
-      const [hours, minutes] = timePart.split(':');
-      const ampm = minutes.split(' ')[1] || 'AM';
-      const mins = minutes.split(' ')[0];
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      let hour = parseInt(hours);
-      if (ampm === 'PM' && hour !== 12) hour += 12;
-      if (ampm === 'AM' && hour === 12) hour = 0;
-      tomorrow.setHours(hour, parseInt(mins), 0, 0);
-      const dayName = tomorrow.toLocaleDateString('en-US', { weekday: 'long' });
-      const timeStr = tomorrow.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      newDueDate = `${dayName}, ${timeStr}`;
+      dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 1);
+      dueDate.setSeconds(0, 0);
     } else if (type === 'next-week') {
-      const originalTime = selectedTask.dueDate || 'Tomorrow, 09:00 AM';
-      const timePart = originalTime.split(', ')[1] || '09:00 AM';
-      const [hours, minutes] = timePart.split(':');
-      const ampm = minutes.split(' ')[1] || 'AM';
-      const mins = minutes.split(' ')[0];
-      const nextWeek = new Date();
-      nextWeek.setDate(nextWeek.getDate() + 7);
-      let hour = parseInt(hours);
-      if (ampm === 'PM' && hour !== 12) hour += 12;
-      if (ampm === 'AM' && hour === 12) hour = 0;
-      nextWeek.setHours(hour, parseInt(mins), 0, 0);
-      const dayName = nextWeek.toLocaleDateString('en-US', { weekday: 'long' });
-      const timeStr = nextWeek.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      newDueDate = `${dayName}, ${timeStr}`;
+      dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 7);
+      dueDate.setSeconds(0, 0);
     } else if (type === 'custom' && selectedDate) {
-      const customDate = new Date(selectedDate);
-      const dayName = customDate.toLocaleDateString('en-US', { weekday: 'long' });
-      const timeStr = customDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      newDueDate = `${dayName}, ${timeStr}`;
+      dueDate = new Date(selectedDate);
     }
+
+    if (!dueDate) return;
+    const newDueDate = dueDate.toISOString();
 
     if (userId) {
       if (selectedTask.isCustom) {
@@ -247,7 +232,7 @@ export const RoomChecklists: React.FC = () => {
           ...room,
           tasks: room.tasks.map(task =>
             task.id === selectedTask.id
-              ? { ...task, dueDate: newDueDate, postponed: true, completed: false }
+              ? { ...task, dueDate: newDueDate, postponed: true, completed: false, isOverdue: false }
               : task
           ),
         };
@@ -358,7 +343,7 @@ export const RoomChecklists: React.FC = () => {
                         </h3>
                         {task.dueDate && !task.completed && (
                           <p style={{ fontSize: '0.875rem', color: task.isOverdue ? '#dc2626' : '#6b7280', marginTop: '0.25rem', fontWeight: task.isOverdue ? '600' : 'normal' }}>
-                            {task.isOverdue ? 'Overdue: ' : 'Due: '}{task.dueDate}
+                            {task.isOverdue ? 'Overdue: ' : 'Due: '}{formatDueDate(task.dueDate!)}
                           </p>
                         )}
                       </div>

@@ -31,6 +31,20 @@ function PublicRoute({ element }: { element: React.ReactNode }) {
   return <>{element}</>;
 }
 
+function ProtectedRoute({ element }: { element: React.ReactNode }) {
+  const [checking, setChecking] = useState(true);
+  const [authed, setAuthed] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthed(!!session);
+      setChecking(false);
+    });
+  }, []);
+  if (checking) return null;
+  if (!authed) return <Navigate to="/login" replace />;
+  return <>{element}</>;
+}
+
 function App() {
   const [showNotificationPermission, setShowNotificationPermission] = useState(false);
 
@@ -68,14 +82,14 @@ function App() {
           <Route path="/register" element={<PublicRoute element={<RegisterPage />} />} />
           <Route path="/otp-verification" element={<OTPVerificationPage />} />
           <Route path="/reset-password" element={<PasswordResetPage />} />
-          <Route path="/setup" element={<InitialSetupFlow />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/tasks" element={<MyTasks />} />
-          <Route path="/room-checklists" element={<RoomChecklists />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/tips" element={<Tips />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/help" element={<Help />} />
+          <Route path="/setup" element={<ProtectedRoute element={<InitialSetupFlow />} />} />
+          <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
+          <Route path="/tasks" element={<ProtectedRoute element={<MyTasks />} />} />
+          <Route path="/room-checklists" element={<ProtectedRoute element={<RoomChecklists />} />} />
+          <Route path="/analytics" element={<ProtectedRoute element={<Analytics />} />} />
+          <Route path="/tips" element={<ProtectedRoute element={<Tips />} />} />
+          <Route path="/settings" element={<ProtectedRoute element={<Settings />} />} />
+          <Route path="/help" element={<ProtectedRoute element={<Help />} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
