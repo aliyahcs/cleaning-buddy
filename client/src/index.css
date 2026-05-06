@@ -64,6 +64,9 @@ p {
   .cb-grid-2 {
     grid-template-columns: 1fr !important;
   }
+  .cb-grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
   /* Analytics 2fr/1fr layout */
   .cb-grid-analytics {
     grid-template-columns: 1fr !important;

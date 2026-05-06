@@ -184,24 +184,10 @@ export const LoginPage: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                style={{ height: '1rem', width: '1rem', color: '#2563eb', border: '#d1d5db', borderRadius: '0.25rem' }}
-              />
-              <label htmlFor="remember-me" style={{ marginLeft: '0.5rem', fontSize: '0.875rem', color: '#111827' }}>
-                Remember me
-              </label>
-            </div>
-
-            <div>
-              <Link to="/reset-password" style={{ fontSize: '0.875rem', fontWeight: '500', color: '#2563eb', textDecoration: 'none' }}>
-                Forgot your password?
-              </Link>
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+            <Link to="/reset-password" style={{ fontSize: '0.875rem', fontWeight: '500', color: '#2563eb', textDecoration: 'none' }}>
+              Forgot your password?
+            </Link>
           </div>
 
           <div style={{ marginTop: '1.5rem' }}>

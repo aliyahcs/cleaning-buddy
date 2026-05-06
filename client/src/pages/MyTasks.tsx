@@ -207,7 +207,7 @@ export const MyTasks: React.FC = () => {
         </div>
 
         {/* Room Cards Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+        <div className="cb-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
           {rooms.map((room) => {
             const completionPercentage = getCompletionPercentage(room.completedTasks, room.totalTasks);
             const statusColors = getStatusColor(room.status);
@@ -283,7 +283,7 @@ export const MyTasks: React.FC = () => {
         {/* Summary Section */}
         <div style={{ marginTop: '2rem', backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
           <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827', marginBottom: '1rem' }}>Weekly Summary</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+          <div className="cb-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827' }}>
                 {rooms.reduce((sum, room) => sum + room.completedTasks, 0)}

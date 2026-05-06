@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
@@ -12,15 +13,30 @@ import { Analytics } from './pages/Analytics.tsx';
 import { Tips } from './pages/Tips.tsx';
 import { Settings } from './pages/Settings.tsx';
 import { Help } from './pages/Help.tsx';
+import { supabase } from './lib/supabase.ts';
+
+function PublicRoute({ element }: { element: React.ReactNode }) {
+  const [checking, setChecking] = useState(true);
+  const [authed, setAuthed] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthed(!!session);
+      setChecking(false);
+    });
+  }, []);
+  if (checking) return null;
+  if (authed) return <Navigate to="/dashboard" replace />;
+  return <>{element}</>;
+}
 
 function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
         <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/" element={<PublicRoute element={<LandingPage />} />} />
+          <Route path="/login" element={<PublicRoute element={<LoginPage />} />} />
+          <Route path="/register" element={<PublicRoute element={<RegisterPage />} />} />
           <Route path="/otp-verification" element={<OTPVerificationPage />} />
           <Route path="/reset-password" element={<PasswordResetPage />} />
           <Route path="/setup" element={<InitialSetupFlow />} />
