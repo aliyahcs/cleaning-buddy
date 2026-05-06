@@ -14,6 +14,7 @@ export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userData, setUserData] = useState<any>(null);
+  const [priorityRooms, setPriorityRooms] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -21,12 +22,24 @@ export const Dashboard: React.FC = () => {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError || !user) { setError('Not authenticated'); return; }
 
-        const [userRes, profileRes] = await Promise.all([
+        const [userRes, profileRes, priorityRes, roomsRes] = await Promise.all([
           supabase.from('users').select('first_name, last_name').eq('user_id', user.id).single(),
           supabase.from('user_profiles').select('selected_cleaning_weekday, selected_cleaning_time, neat_freak_score, cleaner_categories(name)').eq('user_id', user.id).single(),
+          supabase.from('user_room_priorities').select('room_id, priority_rank').eq('user_id', user.id).order('priority_rank'),
+          supabase.from('rooms').select('room_id, name'),
         ]);
 
         if (userRes.error) throw userRes.error;
+
+        const iconMap: Record<string, string> = { 'kitchen': '🍳', 'bathroom': '🚿', 'bedroom': '🛏', 'living room': '🛋', 'laundry': '🧺' };
+        const roomNameMap: Record<number, string> = {};
+        (roomsRes.data || []).forEach((r: any) => { roomNameMap[r.room_id] = r.name; });
+        setPriorityRooms((priorityRes.data || []).map((p: any) => ({
+          roomId: p.room_id,
+          rank: p.priority_rank,
+          name: roomNameMap[p.room_id] || 'Unknown',
+          icon: iconMap[(roomNameMap[p.room_id] || '').toLowerCase()] || '🏠',
+        })));
 
         setUserData({ ...userRes.data, profile: profileRes.data });
       } catch (err) {
@@ -39,23 +52,6 @@ export const Dashboard: React.FC = () => {
     fetchUserData();
   }, []);
 
-  // Mock data for upcoming tasks - replace with API call later
-  const upcomingTasks = [
-    { id: 1, room: 'Kitchen', task: 'Wipe down counter tops', time: '9:00 AM', priority: 'high' },
-    { id: 2, room: 'Bathroom', task: 'Clean toilet', time: '9:30 AM', priority: 'high' },
-    { id: 3, room: 'Bedroom', task: 'Make bed', time: '10:00 AM', priority: 'medium' },
-    { id: 4, room: 'Living Room', task: 'Vacuum floor', time: '10:30 AM', priority: 'medium' },
-    { id: 5, room: 'Laundry', task: 'Separate clothes', time: '11:00 AM', priority: 'low' }
-  ];
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return { bg: '#fef2f2', text: '#dc2626', border: '#fecaca' };
-      case 'medium': return { bg: '#fefce8', text: '#ca8a04', border: '#fef9c3' };
-      case 'low': return { bg: '#f0fdf4', text: '#16a34a', border: '#dcfce7' };
-      default: return { bg: '#f9fafb', text: '#6b7280', border: '#e5e7eb' };
-    }
-  };
 
   if (loading) {
     return (
@@ -251,64 +247,43 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Upcoming Tasks Section */}
+        {/* Priority Rooms Section */}
         <div style={{ marginTop: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827' }}>Upcoming Tasks</h2>
-            <Link
-              to="/room-checklists"
-              style={{ fontSize: '0.875rem', fontWeight: '500', color: '#2563eb', textDecoration: 'none' }}
-            >
-              View all tasks →
+            <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827' }}>Priority Rooms</h2>
+            <Link to="/tasks" style={{ fontSize: '0.875rem', fontWeight: '500', color: '#2563eb', textDecoration: 'none' }}>
+              View all rooms →
             </Link>
           </div>
-          
+
           <div style={{ backgroundColor: 'white', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', borderRadius: '0.375rem', overflow: 'hidden' }}>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              {upcomingTasks.map((task) => {
-                const colors = getPriorityColor(task.priority);
-                return (
-                  <li key={task.id} style={{ padding: '1rem', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            {priorityRooms.length === 0 ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280', fontSize: '0.875rem' }}>
+                No priority rooms set yet. Complete the initial setup to flag your most important rooms.
+              </div>
+            ) : (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {priorityRooms.map((room) => (
+                  <li key={room.roomId} style={{ padding: '1rem', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <div style={{ flexShrink: 0 }}>
-                        <div style={{ 
-                          height: '2rem', 
-                          width: '2rem', 
-                          borderRadius: '9999px', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
-                          fontSize: '0.75rem', 
-                          fontWeight: '500',
-                          backgroundColor: colors.bg,
-                          color: colors.text
-                        }}>
-                          {task.room.charAt(0)}
-                        </div>
-                      </div>
-                      <div style={{ marginLeft: '1rem' }}>
-                        <p style={{ fontSize: '0.875rem', fontWeight: '500', color: '#111827' }}>{task.task}</p>
-                        <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>{task.room} • {task.time}</p>
+                      <span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>{room.icon}</span>
+                      <div>
+                        <p style={{ fontSize: '0.875rem', fontWeight: '500', color: '#111827' }}>{room.name}</p>
+                        <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>Flagged as high priority</p>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <span style={{ 
-                        display: 'inline-flex', 
-                        alignItems: 'center', 
-                        padding: '0.25rem 0.625rem', 
-                        borderRadius: '9999px', 
-                        fontSize: '0.75rem', 
-                        fontWeight: '500',
-                        backgroundColor: colors.bg,
-                        color: colors.text
-                      }}>
-                        {task.priority}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.25rem 0.625rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '600', backgroundColor: room.rank === 1 ? '#fee2e2' : '#fef9c3', color: room.rank === 1 ? '#dc2626' : '#92400e' }}>
+                        ★ Priority {room.rank}
                       </span>
+                      <Link to={`/room-checklists?room=${room.roomId}`} style={{ padding: '0.375rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '500', color: '#374151', textDecoration: 'none', backgroundColor: 'white' }}>
+                        View Tasks
+                      </Link>
                     </div>
                   </li>
-                );
-              })}
-            </ul>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </main>

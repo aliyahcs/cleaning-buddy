@@ -8,11 +8,16 @@ import {
 } from '@heroicons/react/24/outline';
 import { supabase } from '../lib/supabase';
 
-const TOTAL_TASKS = 11 + 7 + 8 + 5 + 5; // 36 total across all rooms
+const TASKS_BY_DWELLING: Record<number, number> = {
+  1: 31, // Apartment: Kitchen + Bathroom + Bedroom + Living Room
+  2: 36, // House: all 5 rooms
+  3: 23, // Studio: Kitchen + Bathroom + Living Room
+};
 
 export const Analytics: React.FC = () => {
   const [scoreCopied, setScoreCopied] = useState(false);
   const [weeklyHealthScore, setWeeklyHealthScore] = useState<number | null>(null);
+  const [totalTasks, setTotalTasks] = useState(36);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,10 +27,11 @@ export const Analytics: React.FC = () => {
         if (!user) return;
         const { data: profile } = await supabase
           .from('user_profiles')
-          .select('neat_freak_score')
+          .select('neat_freak_score, dwelling_type_id')
           .eq('user_id', user.id)
           .single();
         setWeeklyHealthScore(profile?.neat_freak_score ?? null);
+        setTotalTasks(TASKS_BY_DWELLING[profile?.dwelling_type_id ?? 2] ?? 36);
       } catch (err) {
         console.error('Failed to load analytics:', err);
       } finally {
@@ -36,7 +42,7 @@ export const Analytics: React.FC = () => {
   }, []);
 
   const score = weeklyHealthScore ?? 0;
-  const tasksThisWeek = TOTAL_TASKS;
+  const tasksThisWeek = totalTasks;
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return { bg: '#dcfce7', text: '#16a34a' };

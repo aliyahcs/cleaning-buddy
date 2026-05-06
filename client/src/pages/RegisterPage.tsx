@@ -73,7 +73,7 @@ export const RegisterPage: React.FC = () => {
 
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
       options: {
@@ -88,6 +88,12 @@ export const RegisterPage: React.FC = () => {
 
     if (error) {
       setErrors(prev => ({ ...prev, email: error.message }));
+      return;
+    }
+
+    // Supabase returns an empty identities array when the email is already registered
+    if (data.user?.identities?.length === 0) {
+      setErrors(prev => ({ ...prev, email: 'An account with this email already exists. Sign in instead.' }));
       return;
     }
 

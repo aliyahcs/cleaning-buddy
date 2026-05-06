@@ -23,6 +23,12 @@ interface Room {
   tasks: Task[];
 }
 
+const DWELLING_ROOMS: Record<number, number[]> = {
+  1: [1, 2, 3, 4],
+  2: [1, 2, 3, 4, 5],
+  3: [1, 2, 4],
+};
+
 export const RoomChecklists: React.FC = () => {
   const [searchParams] = useSearchParams();
   const roomId = searchParams.get('room');
@@ -33,7 +39,8 @@ export const RoomChecklists: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+  const [allowedRoomIds, setAllowedRoomIds] = useState<number[]>([1, 2, 3, 4, 5]);
+
   // Default rooms data structure
   const defaultRooms: Room[] = [
     { id: 1, name: 'Kitchen', icon: '🍳', tasks: [] },
@@ -54,12 +61,14 @@ export const RoomChecklists: React.FC = () => {
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const { data: templates, error: templatesError } = await supabase
-          .from('task_templates')
-          .select('*')
-          .eq('is_active', true)
-          .order('display_order');
+        const { data: { user } } = await supabase.auth.getUser();
+        const [{ data: templates, error: templatesError }, { data: profileData }] = await Promise.all([
+          supabase.from('task_templates').select('*').eq('is_active', true).order('display_order'),
+          user ? supabase.from('user_profiles').select('dwelling_type_id').eq('user_id', user.id).single() : Promise.resolve({ data: null }),
+        ]);
         if (templatesError) throw templatesError;
+        const dwellingId: number = (profileData as any)?.dwelling_type_id ?? 2;
+        setAllowedRoomIds(DWELLING_ROOMS[dwellingId] ?? [1, 2, 3, 4, 5]);
 
         setRooms(prevRooms => {
           const updated = prevRooms.map(room => {
@@ -129,7 +138,8 @@ export const RoomChecklists: React.FC = () => {
     5: 5   // Laundry
   };
 
-  const currentRoom = rooms.find(room => room.id.toString() === roomId) || rooms[0];
+  const displayRooms = rooms.filter(r => allowedRoomIds.includes(r.id));
+  const currentRoom = (roomId ? displayRooms.find(room => room.id.toString() === roomId) : null) || displayRooms[0] || rooms[0];
   const completedTasks = currentRoom.tasks.filter(task => task.completed).length;
   const totalTasks = specTaskCounts[currentRoom.id as keyof typeof specTaskCounts] || currentRoom.tasks.length;
   const completionPercentage = Math.round((completedTasks / totalTasks) * 100);
@@ -276,26 +286,12 @@ export const RoomChecklists: React.FC = () => {
         <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '0 1rem 0 1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Link to="/room-checklists?room=1" style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none', backgroundColor: currentRoom.id === 1 ? '#dbeafe' : 'transparent', color: currentRoom.id === 1 ? '#1d4ed8' : '#6b7280' }} onMouseOver={(e) => { if (currentRoom.id !== 1) e.currentTarget.style.backgroundColor = '#f3f4f6' }} onMouseOut={(e) => { if (currentRoom.id !== 1) e.currentTarget.style.backgroundColor = 'transparent' }}>
-                <span style={{ marginRight: '0.5rem' }}>🍳</span>
-                Kitchen
-              </Link>
-              <Link to="/room-checklists?room=2" style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none', backgroundColor: currentRoom.id === 2 ? '#dbeafe' : 'transparent', color: currentRoom.id === 2 ? '#1d4ed8' : '#6b7280' }} onMouseOver={(e) => { if (currentRoom.id !== 2) e.currentTarget.style.backgroundColor = '#f3f4f6' }} onMouseOut={(e) => { if (currentRoom.id !== 2) e.currentTarget.style.backgroundColor = 'transparent' }}>
-                <span style={{ marginRight: '0.5rem' }}>🚿</span>
-                Bathroom
-              </Link>
-              <Link to="/room-checklists?room=3" style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none', backgroundColor: currentRoom.id === 3 ? '#dbeafe' : 'transparent', color: currentRoom.id === 3 ? '#1d4ed8' : '#6b7280' }} onMouseOver={(e) => { if (currentRoom.id !== 3) e.currentTarget.style.backgroundColor = '#f3f4f6' }} onMouseOut={(e) => { if (currentRoom.id !== 3) e.currentTarget.style.backgroundColor = 'transparent' }}>
-                <span style={{ marginRight: '0.5rem' }}>🛏</span>
-                Bedroom
-              </Link>
-              <Link to="/room-checklists?room=4" style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none', backgroundColor: currentRoom.id === 4 ? '#dbeafe' : 'transparent', color: currentRoom.id === 4 ? '#1d4ed8' : '#6b7280' }} onMouseOver={(e) => { if (currentRoom.id !== 4) e.currentTarget.style.backgroundColor = '#f3f4f6' }} onMouseOut={(e) => { if (currentRoom.id !== 4) e.currentTarget.style.backgroundColor = 'transparent' }}>
-                <span style={{ marginRight: '0.5rem' }}>🛋</span>
-                Living Room
-              </Link>
-              <Link to="/room-checklists?room=5" style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none', backgroundColor: currentRoom.id === 5 ? '#dbeafe' : 'transparent', color: currentRoom.id === 5 ? '#1d4ed8' : '#6b7280' }} onMouseOver={(e) => { if (currentRoom.id !== 5) e.currentTarget.style.backgroundColor = '#f3f4f6' }} onMouseOut={(e) => { if (currentRoom.id !== 5) e.currentTarget.style.backgroundColor = 'transparent' }}>
-                <span style={{ marginRight: '0.5rem' }}>🧺</span>
-                Laundry
-              </Link>
+              {displayRooms.map(room => (
+                <Link key={room.id} to={`/room-checklists?room=${room.id}`} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none', backgroundColor: currentRoom.id === room.id ? '#dbeafe' : 'transparent', color: currentRoom.id === room.id ? '#1d4ed8' : '#6b7280' }} onMouseOver={(e) => { if (currentRoom.id !== room.id) e.currentTarget.style.backgroundColor = '#f3f4f6' }} onMouseOut={(e) => { if (currentRoom.id !== room.id) e.currentTarget.style.backgroundColor = 'transparent' }}>
+                  <span style={{ marginRight: '0.5rem' }}>{room.icon}</span>
+                  {room.name}
+                </Link>
+              ))}
             </div>
           </div>
         </div>

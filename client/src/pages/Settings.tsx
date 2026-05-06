@@ -12,6 +12,7 @@ import {
 import { supabase } from '../lib/supabase';
 
 const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const dwellingTypeIdMap: Record<string, number> = { 'Apartment': 1, 'House': 2, 'Studio': 3 };
 
 export const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -82,9 +83,14 @@ export const Settings: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const dayIndex = dayNames.indexOf(userProfile.cleaningDay);
+      const dwellingId = dwellingTypeIdMap[userProfile.dwellingType];
       await Promise.all([
         supabase.from('users').update({ first_name: userProfile.firstName, last_name: userProfile.lastName }).eq('user_id', user.id),
-        supabase.from('user_profiles').update({ selected_cleaning_weekday: dayIndex, selected_cleaning_time: userProfile.cleaningTime }).eq('user_id', user.id),
+        supabase.from('user_profiles').update({
+          selected_cleaning_weekday: dayIndex,
+          selected_cleaning_time: userProfile.cleaningTime,
+          ...(dwellingId ? { dwelling_type_id: dwellingId } : {}),
+        }).eq('user_id', user.id),
       ]);
       alert('Profile saved successfully!');
     } catch (err) {
@@ -245,11 +251,9 @@ export const Settings: React.FC = () => {
                     onChange={(e) => setUserProfile({...userProfile, dwellingType: e.target.value})}
                     style={{ display: 'block', width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', backgroundColor: 'white', fontSize: '0.875rem', outline: 'none' }}
                   >
+                    <option value="Apartment">Apartment</option>
+                    <option value="House">House</option>
                     <option value="Studio">Studio</option>
-                    <option value="1-Bedroom Apartment">1-Bedroom Apartment</option>
-                    <option value="2-Bedroom Apartment">2-Bedroom Apartment</option>
-                    <option value="3-Bedroom House">3-Bedroom House</option>
-                    <option value="4+ Bedroom House">4+ Bedroom House</option>
                   </select>
                 </div>
 

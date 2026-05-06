@@ -8,6 +8,13 @@ import {
 } from '@heroicons/react/24/outline';
 import { supabase } from '../lib/supabase';
 
+// Room IDs per dwelling type — matches DB dwelling_type_rooms seed
+const DWELLING_ROOMS: Record<number, number[]> = {
+  1: [1, 2, 3, 4],    // Apartment
+  2: [1, 2, 3, 4, 5], // House
+  3: [1, 2, 4],        // Studio
+};
+
 export const MyTasks: React.FC = () => {
   const navigate = useNavigate();
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
@@ -15,50 +22,63 @@ export const MyTasks: React.FC = () => {
   const [selectedRoomId, setSelectedRoomId] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+  const [priorityRoomIds, setPriorityRoomIds] = useState<number[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchRoomsWithTasks = async () => {
       try {
-        const [{ data: roomsData, error: roomsError }, { data: taskData, error: taskError }] = await Promise.all([
+        const { data: { user } } = await supabase.auth.getUser();
+
+        const [{ data: roomsData, error: roomsError }, { data: taskData, error: taskError }, { data: profileData }, { data: priorityData }] = await Promise.all([
           supabase.from('rooms').select('*').order('room_id'),
           supabase.from('task_templates').select('room_id').eq('is_active', true),
+          user ? supabase.from('user_profiles').select('dwelling_type_id').eq('user_id', user.id).single() : Promise.resolve({ data: null }),
+          user ? supabase.from('user_room_priorities').select('room_id, priority_rank').eq('user_id', user.id).order('priority_rank') : Promise.resolve({ data: [] }),
         ]);
         if (roomsError) throw roomsError;
         if (taskError) throw taskError;
 
+        const priorityMap: Record<number, number> = {};
+        (priorityData || []).forEach((p: any) => { priorityMap[p.room_id] = p.priority_rank; });
+        setPriorityRoomIds((priorityData || []).map((p: any) => p.room_id));
+
+        const dwellingId: number = profileData?.dwelling_type_id ?? 2;
+        const allowedRoomIds = DWELLING_ROOMS[dwellingId] ?? [1, 2, 3, 4, 5];
+
         const taskCounts: Record<number, number> = {};
         taskData!.forEach((t: any) => { taskCounts[t.room_id] = (taskCounts[t.room_id] || 0) + 1; });
 
-        // Read task totals + completion state from localStorage (includes quick-added tasks)
         const completedCounts: Record<number, number> = {};
         try {
           const saved = localStorage.getItem('roomChecklists');
           if (saved) {
             JSON.parse(saved).forEach((room: any) => {
               const localTotal = room.tasks.length;
-              if (localTotal > (taskCounts[room.id] || 0)) {
-                taskCounts[room.id] = localTotal;
-              }
+              if (localTotal > (taskCounts[room.id] || 0)) taskCounts[room.id] = localTotal;
               completedCounts[room.id] = room.tasks.filter((t: any) => t.completed).length;
             });
           }
         } catch (e) {}
 
         const iconMap: Record<string, string> = { 'kitchen': '🍳', 'bathroom': '🚿', 'bedroom': '🛏', 'living room': '🛋', 'laundry': '🧺' };
-        setRooms(roomsData!.map((room: any) => {
-          const total = taskCounts[room.room_id] || 0;
-          const completed = completedCounts[room.room_id] || 0;
-          return {
-            id: room.room_id,
-            name: room.name,
-            icon: iconMap[room.name.toLowerCase()] || '🏠',
-            totalTasks: total,
-            completedTasks: completed,
-            status: total > 0 ? (completed >= total ? 'completed' : completed > 0 ? 'in-progress' : 'pending') : 'pending',
-          };
-        }));
+        setRooms(
+          roomsData!
+            .filter((room: any) => allowedRoomIds.includes(room.room_id))
+            .map((room: any) => {
+              const total = taskCounts[room.room_id] || 0;
+              const completed = completedCounts[room.room_id] || 0;
+              return {
+                id: room.room_id,
+                name: room.name,
+                icon: iconMap[room.name.toLowerCase()] || '🏠',
+                totalTasks: total,
+                completedTasks: completed,
+                status: total > 0 ? (completed >= total ? 'completed' : completed > 0 ? 'in-progress' : 'pending') : 'pending',
+                priorityRank: priorityMap[room.room_id] ?? null,
+              };
+            })
+        );
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -195,7 +215,7 @@ export const MyTasks: React.FC = () => {
             const statusColors = getStatusColor(room.status);
             
             return (
-              <div key={room.id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', overflow: 'hidden', transition: 'box-shadow 0.2s ease' }} onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 4px 6px 0 rgba(0, 0, 0, 0.1)'} onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1)'}>
+              <div key={room.id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', overflow: 'hidden', transition: 'box-shadow 0.2s ease', borderLeft: room.priorityRank === 1 ? '4px solid #ef4444' : room.priorityRank === 2 ? '4px solid #f59e0b' : undefined }} onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 4px 6px 0 rgba(0, 0, 0, 0.1)'} onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1)'}>
                 <div style={{ padding: '1.5rem' }}>
                   {/* Room Header */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
@@ -206,6 +226,11 @@ export const MyTasks: React.FC = () => {
                         <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
                           {room.completedTasks} of {room.totalTasks} tasks complete
                         </p>
+                        {room.priorityRank && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.125rem 0.5rem', borderRadius: '9999px', fontSize: '0.6875rem', fontWeight: '600', backgroundColor: room.priorityRank === 1 ? '#fee2e2' : '#fef9c3', color: room.priorityRank === 1 ? '#dc2626' : '#92400e', marginTop: '0.25rem' }}>
+                            ★ Priority {room.priorityRank}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.25rem 0.625rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '500', backgroundColor: statusColors.bg, color: statusColors.text }}>

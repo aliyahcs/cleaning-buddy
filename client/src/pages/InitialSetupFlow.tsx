@@ -106,12 +106,11 @@ const quizQuestions: QuizQuestion[] = [
   }
 ];
 
+// IDs match the DB: Apartment=1, House=2, Studio=3
 const dwellingTypes = [
-  { id: 1, name: 'Studio',              description: 'Open-plan single room serving as bedroom, living, and kitchen area' },
-  { id: 2, name: '1-Bedroom Apartment', description: 'One bedroom with separate living room, kitchen, and bathroom' },
-  { id: 3, name: '2-Bedroom Apartment', description: 'Two bedrooms with shared living areas' },
-  { id: 4, name: '3-Bedroom House',     description: 'Three-bedroom home with full living areas' },
-  { id: 5, name: '4+ Bedroom House',    description: 'Large home with four or more bedrooms' },
+  { id: 1, name: 'Apartment', description: 'Multi-unit dwelling — Kitchen, Bathroom, Bedroom, Living Room', roomIds: [1, 2, 3, 4] },
+  { id: 2, name: 'House',     description: 'Single-family home — all 5 rooms including Laundry',           roomIds: [1, 2, 3, 4, 5] },
+  { id: 3, name: 'Studio',    description: 'Open-plan space — Kitchen, Bathroom, Living Room',             roomIds: [1, 2, 4] },
 ];
 
 const rooms = [
@@ -348,14 +347,16 @@ export const InitialSetupFlow: React.FC = () => {
           </div>
         );
 
-      case 4:
+      case 4: {
+        const dwelling = dwellingTypes.find(d => d.id === selectedDwelling);
+        const availableRooms = rooms.filter(r => !dwelling || dwelling.roomIds.includes(r.id));
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827' }}>Select Priority Rooms</h2>
             <p style={{ color: '#6b7280' }}>Choose your top 2 priority rooms (ranked 1 and 2)</p>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: '1rem' }}>
-              {rooms.map(room => (
+              {availableRooms.map(room => (
                 <label
                   key={room.id}
                   style={{
@@ -396,6 +397,7 @@ export const InitialSetupFlow: React.FC = () => {
             </p>
           </div>
         );
+      }
 
       case 5:
         return (
