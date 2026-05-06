@@ -14,11 +14,26 @@ const TASKS_BY_DWELLING: Record<number, number> = {
   3: 36,
 };
 
+function getLast6Months(): { year: number; month: number; label: string }[] {
+  const result = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    result.push({
+      year: d.getFullYear(),
+      month: d.getMonth(),
+      label: d.toLocaleString('default', { month: 'short' }),
+    });
+  }
+  return result;
+}
+
 export const Analytics: React.FC = () => {
   const [scoreCopied, setScoreCopied] = useState(false);
   const [weeklyHealthScore, setWeeklyHealthScore] = useState<number | null>(null);
   const [totalTasks, setTotalTasks] = useState(36);
   const [roomStats, setRoomStats] = useState<any[]>([]);
+  const [monthlyTrends, setMonthlyTrends] = useState<{ label: string; pct: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,8 +45,8 @@ export const Analytics: React.FC = () => {
         const [{ data: profile }, { data: templates }, { data: completionsData }, { data: customTasksData }, { data: roomsData }] = await Promise.all([
           supabase.from('user_profiles').select('neat_freak_score, dwelling_type_id').eq('user_id', user.id).single(),
           supabase.from('task_templates').select('task_template_id, room_id').eq('is_active', true),
-          supabase.from('user_task_completions').select('task_template_id, postponed').eq('user_id', user.id),
-          supabase.from('user_custom_tasks').select('room_id, completed, postponed').eq('user_id', user.id),
+          supabase.from('user_task_completions').select('task_template_id, postponed, created_at').eq('user_id', user.id),
+          supabase.from('user_custom_tasks').select('room_id, completed, postponed, created_at').eq('user_id', user.id),
           supabase.from('rooms').select('room_id, name').order('room_id'),
         ]);
 
@@ -58,7 +73,24 @@ export const Analytics: React.FC = () => {
         });
 
         const dbTotal = Object.values(taskCounts).reduce((sum, n) => sum + n, 0);
-        setTotalTasks(dbTotal || (TASKS_BY_DWELLING[profile?.dwelling_type_id ?? 2] ?? 36));
+        const total = dbTotal || (TASKS_BY_DWELLING[profile?.dwelling_type_id ?? 2] ?? 36);
+        setTotalTasks(total);
+
+        const trends = getLast6Months().map(({ year, month, label }) => {
+          const templateCompletions = (completionsData || []).filter((c: any) => {
+            if (c.postponed || !c.created_at) return false;
+            const d = new Date(c.created_at);
+            return d.getFullYear() === year && d.getMonth() === month;
+          }).length;
+          const customCompletions = (customTasksData || []).filter((ct: any) => {
+            if (!ct.completed || ct.postponed || !ct.created_at) return false;
+            const d = new Date(ct.created_at);
+            return d.getFullYear() === year && d.getMonth() === month;
+          }).length;
+          const pct = total > 0 ? Math.min(Math.round(((templateCompletions + customCompletions) / total) * 100), 100) : 0;
+          return { label, pct };
+        });
+        setMonthlyTrends(trends);
 
         setRoomStats(
           (roomsData || [])
@@ -238,12 +270,44 @@ export const Analytics: React.FC = () => {
 
         <div style={{ marginTop: '2rem' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>Monthly Trends</h2>
-          <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
-            <div style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
-              <ChartBarIcon style={{ height: '2.5rem', width: '2.5rem', color: '#d1d5db', margin: '0 auto 1rem' }} />
-              <p style={{ fontSize: '0.875rem', fontWeight: '500', color: '#6b7280' }}>No history yet</p>
-              <p style={{ fontSize: '0.875rem', color: '#9ca3af', marginTop: '0.25rem' }}>Your weekly scores will appear here after you complete cleaning sessions.</p>
-            </div>
+          <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', padding: '1.5rem' }}>
+            {monthlyTrends.every(m => m.pct === 0) ? (
+              <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                <ChartBarIcon style={{ height: '2.5rem', width: '2.5rem', color: '#d1d5db', margin: '0 auto 1rem' }} />
+                <p style={{ fontSize: '0.875rem', fontWeight: '500', color: '#6b7280' }}>No history yet</p>
+                <p style={{ fontSize: '0.875rem', color: '#9ca3af', marginTop: '0.25rem' }}>Complete tasks to see your monthly completion trends.</p>
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem', height: '8rem' }}>
+                  {monthlyTrends.map(({ label, pct }) => (
+                    <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                      <span style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>{pct > 0 ? `${pct}%` : ''}</span>
+                      <div
+                        style={{
+                          width: '100%',
+                          backgroundColor: pct >= 75 ? '#22c55e' : pct >= 40 ? '#3b82f6' : '#e5e7eb',
+                          borderRadius: '0.25rem 0.25rem 0 0',
+                          height: pct > 0 ? `${Math.max(pct, 4)}%` : '4%',
+                          transition: 'height 0.4s ease',
+                          minHeight: '3px',
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                  {monthlyTrends.map(({ label }) => (
+                    <div key={label} style={{ flex: 1, textAlign: 'center', fontSize: '0.75rem', color: '#6b7280' }}>{label}</div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', fontSize: '0.75rem', color: '#6b7280' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><span style={{ display: 'inline-block', width: '0.75rem', height: '0.75rem', backgroundColor: '#22c55e', borderRadius: '2px' }} /> 75%+</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><span style={{ display: 'inline-block', width: '0.75rem', height: '0.75rem', backgroundColor: '#3b82f6', borderRadius: '2px' }} /> 40–74%</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><span style={{ display: 'inline-block', width: '0.75rem', height: '0.75rem', backgroundColor: '#e5e7eb', borderRadius: '2px' }} /> Under 40%</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

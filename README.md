@@ -97,7 +97,7 @@ cleaning-buddy/
 - Room-based task checklists with cross-device sync via Supabase
 - Quick-add custom tasks per room (synced to DB)
 - Task postponement with calendar date picker (synced to DB)
-- Weekly cleaning health score and analytics dashboard
+- Analytics dashboard: weekly health score, room performance breakdown, monthly trends section
 - Cleaning tips library with per-tip task application
 - Notification settings (push on/off, in-app on/off, sound preference) synced across devices
 - Browser notifications with service worker for PWA install support
@@ -107,7 +107,7 @@ cleaning-buddy/
 ### Known Issues / Limitations
 - Browser notifications only fire while the app is open or running in the background as a PWA. Notifications when the app is fully closed would require a Web Push backend (not implemented).
 - No real-time sync across open tabs — changes made in one tab appear on the other after a page refresh.
-- Analytics health score reflects the current week's completions; historical trend data is not stored.
+- Monthly Trends section on Analytics always shows "No history yet" — the UI is there but historical weekly snapshots are not stored in the DB, so trend data never accumulates.
 
 ### Incomplete Features
 - Web Push (server-side push notifications when app is closed)
@@ -162,7 +162,7 @@ Open [http://localhost:5173](http://localhost:5173)
 
 **OTP email not arriving**
 - Check your spam folder
-- Supabase has a rate limit of 3 emails/hour on the free plan — wait and retry
+- Supabase has a rate limit of 2 emails/hour on the free plan — wait and retry
 - Confirm your email was entered correctly on the register page
 
 **"NetworkError" / API calls failing**
