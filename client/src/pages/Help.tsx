@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { 
+import {
   QuestionMarkCircleIcon,
-  EnvelopeIcon,
-  PhoneIcon,
   ChevronRightIcon,
   ChevronDownIcon,
-  UserIcon
 } from '@heroicons/react/24/outline';
 
 export const Help: React.FC = () => {
@@ -247,43 +244,10 @@ export const Help: React.FC = () => {
 
         <div style={{ marginTop: '2rem', backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
           <div style={{ padding: '1rem 1.5rem' }}>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827', marginBottom: '1rem' }}>Still need help?</h3>
-            <p style={{ color: '#4b5563', fontSize: '0.875rem', marginBottom: '1.5rem' }}>Our support team is here to assist you with any questions or issues you may have.</p>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
-                  <EnvelopeIcon style={{ height: '2rem', width: '2rem', color: '#3b82f6' }} />
-                </div>
-                <div>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '500', color: '#111827' }}>Email Support</h4>
-                  <p style={{ fontSize: '0.875rem', color: '#4b5563' }}>support@cleaningbuddy.com</p>
-                  <p style={{ fontSize: '0.875rem', color: '#4b5563' }}>We typically respond within 24 hours</p>
-                </div>
-              </div>
-
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
-                  <PhoneIcon style={{ height: '2rem', width: '2rem', color: '#22c55e' }} />
-                </div>
-                <div>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '500', color: '#111827' }}>Phone Support</h4>
-                  <p style={{ fontSize: '0.875rem', color: '#4b5563' }}>1-800-CLEANING</p>
-                  <p style={{ fontSize: '0.875rem', color: '#4b5563' }}>Mon-Fri, 9AM-5PM EST</p>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
-                <UserIcon style={{ height: '2rem', width: '2rem', color: '#a855f7' }} />
-              </div>
-              <div>
-                <h4 style={{ fontSize: '1rem', fontWeight: '500', color: '#111827' }}>Help Center</h4>
-                <p style={{ fontSize: '0.875rem', color: '#4b5563' }}>help.cleaningbuddy.com</p>
-                <p style={{ fontSize: '0.875rem', color: '#4b5563' }}>Browse our comprehensive help articles and video tutorials</p>
-              </div>
-            </div>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827', marginBottom: '0.5rem' }}>Still need help?</h3>
+            <p style={{ color: '#4b5563', fontSize: '0.875rem' }}>
+              Contact us at <a href="mailto:aliyahcardenas66@gmail.com" style={{ color: '#2563eb', textDecoration: 'none' }}>aliyahcardenas66@gmail.com</a>
+            </p>
           </div>
         </div>
       </main>
