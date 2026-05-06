@@ -46,7 +46,7 @@ export const Settings: React.FC = () => {
           supabase.from('users').select('first_name, last_name').eq('user_id', user.id).single(),
           supabase.from('user_profiles').select('selected_cleaning_weekday, selected_cleaning_time, neat_freak_score, dwelling_type_id, cleaner_categories(name)').eq('user_id', user.id).single(),
           supabase.from('user_room_priorities').select('rooms(name)').eq('user_id', user.id).order('priority_rank'),
-          supabase.from('user_notification_preferences').select('enable_push, enable_in_app').eq('user_id', user.id).single(),
+          supabase.from('user_notification_preferences').select('enable_push, enable_in_app, sound_id').eq('user_id', user.id).single(),
         ]);
 
         const p = profileRes.data;
@@ -65,7 +65,7 @@ export const Settings: React.FC = () => {
           notifications: {
             pushEnabled: notifRes.data?.enable_push ?? true,
             inAppEnabled: notifRes.data?.enable_in_app ?? true,
-            soundId: 1,
+            soundId: notifRes.data?.sound_id ?? 1,
           }
         });
       } catch (err) {
