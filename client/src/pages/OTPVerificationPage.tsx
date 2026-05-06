@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { supabase } from '../lib/supabase';
 
 export const OTPVerificationPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const email = searchParams.get('email') || '';
-  const [otp, setOtp] = useState(['', '', '', '', '', '', '']);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
+  const [timeLeft, setTimeLeft] = useState(300);
   const [isResending, setIsResending] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -73,27 +75,42 @@ export const OTPVerificationPage: React.FC = () => {
     }
 
     setIsLoading(true);
-    
-    // Mock OTP verification - replace with actual API call
-    setTimeout(() => {
-      setIsLoading(false);
-      // Store authentication state
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userEmail', email);
-      navigate('/setup');
-    }, 1500);
+    setVerifyError('');
+
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otp.join(''),
+      type: 'email',
+    });
+
+    setIsLoading(false);
+
+    if (error) {
+      setVerifyError(error.message);
+      return;
+    }
+
+    navigate('/setup');
   };
 
   const handleResend = async () => {
     setIsResending(true);
-    
-    // Mock resend OTP - replace with actual API call
-    setTimeout(() => {
-      setIsResending(false);
-      setTimeLeft(300); // Reset timer to 5 minutes
-      setOtp(['', '', '', '', '', '', '']);
-      alert('New OTP sent to your email');
-    }, 1000);
+    setVerifyError('');
+
+    const { error } = await supabase.auth.resend({
+      email,
+      type: 'signup',
+    });
+
+    setIsResending(false);
+
+    if (error) {
+      setVerifyError(error.message);
+      return;
+    }
+
+    setTimeLeft(300);
+    setOtp(['', '', '', '', '', '']);
   };
 
   const isExpired = timeLeft === 0;
@@ -152,6 +169,11 @@ export const OTPVerificationPage: React.FC = () => {
             {isExpired && (
               <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#dc2626', textAlign: 'center' }}>
                 Code expired. Please request a new one.
+              </p>
+            )}
+            {verifyError && (
+              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#dc2626', textAlign: 'center' }}>
+                {verifyError}
               </p>
             )}
           </div>

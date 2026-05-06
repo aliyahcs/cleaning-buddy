@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { supabase } from '../lib/supabase';
 
 export const LoginPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -45,13 +46,30 @@ export const LoginPage: React.FC = () => {
     }
 
     setIsLoading(true);
-    
-    // Mock login - replace with actual API call
-    // For now, just redirect to OTP verification
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate(`/otp-verification?email=${encodeURIComponent(formData.email)}`);
-    }, 1000);
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
+
+    setIsLoading(false);
+
+    if (error) {
+      setErrors(prev => ({ ...prev, password: 'Invalid email or password' }));
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('onboarding_completed_at')
+      .eq('user_id', data.user.id)
+      .single();
+
+    if (profile?.onboarding_completed_at) {
+      navigate('/dashboard');
+    } else {
+      navigate('/setup');
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

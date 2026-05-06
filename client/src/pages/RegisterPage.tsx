@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { supabase } from '../lib/supabase';
 
 export const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -71,12 +72,26 @@ export const RegisterPage: React.FC = () => {
     }
 
     setIsLoading(true);
-    
-    // Mock registration - replace with actual API call
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate(`/otp-verification?email=${encodeURIComponent(formData.email)}`);
-    }, 1000);
+
+    const { error } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        data: {
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+        }
+      }
+    });
+
+    setIsLoading(false);
+
+    if (error) {
+      setErrors(prev => ({ ...prev, email: error.message }));
+      return;
+    }
+
+    navigate(`/otp-verification?email=${encodeURIComponent(formData.email)}`);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
