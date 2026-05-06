@@ -6,12 +6,24 @@ interface NotificationService {
 }
 
 class BrowserNotificationService implements NotificationService {
-  private audioContext: AudioContext | null = null;
-  private notificationSound: string = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVohDbq2/EA';
+  private swReg: ServiceWorkerRegistration | null = null;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    this.registerServiceWorker();
+  }
+
+  private async registerServiceWorker(): Promise<void> {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+      this.swReg = await navigator.serviceWorker.register('/sw.js');
+    } catch (err) {
+      console.error('Service worker registration failed:', err);
+    }
+  }
 
   async requestPermission(): Promise<boolean> {
     if (!this.isSupported()) return false;
-
     try {
       const permission = await Notification.requestPermission();
       return permission === 'granted';
@@ -22,67 +34,40 @@ class BrowserNotificationService implements NotificationService {
   }
 
   scheduleNotification(time: string, message: string): void {
-    const [hours, minutes] = time.split(':');
-    const now = new Date();
-    const scheduledTime = new Date();
-    scheduledTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    if (this.timer) clearTimeout(this.timer);
 
-    const timeUntilNotification = scheduledTime.getTime() - now.getTime();
+    const [h, m] = time.split(':').map(Number);
+    const next = new Date();
+    next.setHours(h, m, 0, 0);
+    if (next <= new Date()) next.setDate(next.getDate() + 1);
 
-    if (timeUntilNotification > 0) {
-      setTimeout(() => {
-        this.showNotification('Cleaning Reminder', message);
-      }, timeUntilNotification);
-    }
+    const delay = next.getTime() - Date.now();
+
+    this.timer = setTimeout(() => {
+      this.showNotification('Cleaning Reminder', message);
+      this.scheduleNotification(time, message);
+    }, delay);
   }
 
   showNotification(title: string, body: string): void {
-    if (!this.isSupported()) return;
+    if (!this.isSupported() || Notification.permission !== 'granted') return;
 
-    try {
-      const notification = new Notification(title, {
-        body,
-        icon: '/favicon.svg',
-        badge: '/favicon.svg',
-        tag: 'cleaning-reminder',
-        requireInteraction: false,
-        silent: false
-      });
+    const options: NotificationOptions = {
+      body,
+      icon: '/favicon.svg',
+      badge: '/favicon.svg',
+      tag: 'cleaning-reminder',
+      requireInteraction: false,
+    };
 
-      // Play notification sound
-      this.playNotificationSound();
-
-      // Auto-close after 10 seconds
-      setTimeout(() => {
-        notification.close();
-      }, 10000);
-
-    } catch (error) {
-      console.error('Error showing notification:', error);
-    }
-  }
-
-  private playNotificationSound(): void {
-    try {
-      if (!this.audioContext) {
-        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-
-      const buffer = atob(this.notificationSound.split(',')[1]);
-      const arrayBuffer = new ArrayBuffer(buffer.length);
-      const view = new Uint8Array(arrayBuffer);
-      for (let i = 0; i < buffer.length; i++) {
-        view[i] = buffer.charCodeAt(i);
-      }
-
-      this.audioContext.decodeAudioData(arrayBuffer, (audioBuffer) => {
-        const source = this.audioContext!.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(this.audioContext!.destination);
-        source.start(0);
-      });
-    } catch (error) {
-      console.error('Error playing notification sound:', error);
+    if (this.swReg) {
+      this.swReg.showNotification(title, options);
+    } else if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready
+        .then((reg) => reg.showNotification(title, options))
+        .catch(() => new Notification(title, options));
+    } else {
+      new Notification(title, options);
     }
   }
 

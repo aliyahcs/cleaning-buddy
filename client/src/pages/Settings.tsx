@@ -114,11 +114,19 @@ export const Settings: React.FC = () => {
         sound_id: userProfile.notifications.soundId,
       });
       
-      // Update notification service settings
+      // Request permission if enabling push, then schedule
       if (userProfile.notifications.pushEnabled && notificationService.isSupported()) {
-        await notificationService.requestPermission();
+        const granted = Notification.permission === 'granted'
+          ? true
+          : await notificationService.requestPermission();
+        if (granted) {
+          notificationService.scheduleNotification(
+            userProfile.cleaningTime,
+            'Time to start your cleaning routine!'
+          );
+        }
       }
-      
+
       alert('Notification preferences saved!');
     } catch (err) {
       alert('Failed to save notifications.');

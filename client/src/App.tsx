@@ -34,26 +34,26 @@ function PublicRoute({ element }: { element: React.ReactNode }) {
 function App() {
   const [showNotificationPermission, setShowNotificationPermission] = useState(false);
 
+  useEffect(() => {
+    if (!('Notification' in window) || Notification.permission !== 'default') return;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setShowNotificationPermission(true);
+    });
+  }, []);
+
   const handleNotificationPermission = (granted: boolean) => {
     setShowNotificationPermission(false);
-    if (granted) {
-      // Schedule daily cleaning reminders
-      const scheduleDailyReminders = async () => {
-        const { data: user } = await supabase.auth.getUser();
-        if (user) {
-          // Get user's cleaning time from profile
-          // This would be implemented with actual profile data
-          const cleaningTime = '09:00'; // Default, should come from user profile
-          const message = 'Time to start your cleaning routine!';
-          
-          notificationService.scheduleNotification(cleaningTime, message);
-        }
-      };
-
-      // Schedule immediately and then daily
-      scheduleDailyReminders();
-      setInterval(scheduleDailyReminders, 24 * 60 * 60 * 1000); // Every 24 hours
-    }
+    if (!granted) return;
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('selected_cleaning_time')
+        .eq('user_id', user.id)
+        .single();
+      const time = data?.selected_cleaning_time?.slice(0, 5) || '09:00';
+      notificationService.scheduleNotification(time, 'Time to start your cleaning routine!');
+    });
   };
 
   return (
