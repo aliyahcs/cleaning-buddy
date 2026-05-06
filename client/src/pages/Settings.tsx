@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   UserIcon,
   BellIcon,
@@ -14,6 +14,7 @@ const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
 const dwellingTypeIdMap: Record<string, number> = { 'Apartment': 1, 'House': 2, 'Studio': 3 };
 
 export const Settings: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -126,6 +127,11 @@ export const Settings: React.FC = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
+
   const tabs = [
     { id: 'profile', name: 'Profile', icon: UserIcon },
     { id: 'notifications', name: 'Notifications', icon: BellIcon },
@@ -161,6 +167,7 @@ export const Settings: React.FC = () => {
               <Link to="/tips" style={{ color: '#6b7280', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none' }} onMouseOver={(e) => e.currentTarget.style.color = '#111827'} onMouseOut={(e) => e.currentTarget.style.color = '#6b7280'}>Tips</Link>
               <Link to="/settings" style={{ color: '#111827', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none' }}>Settings</Link>
               <Link to="/help" style={{ color: '#6b7280', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none' }} onMouseOver={(e) => e.currentTarget.style.color = '#111827'} onMouseOut={(e) => e.currentTarget.style.color = '#6b7280'}>Help</Link>
+              <button onClick={handleSignOut} style={{ color: '#dc2626', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={(e) => e.currentTarget.style.color = '#b91c1c'} onMouseOut={(e) => e.currentTarget.style.color = '#dc2626'}>Sign Out</button>
             </nav>
           </div>
         </div>
@@ -280,6 +287,18 @@ export const Settings: React.FC = () => {
                     onMouseOut={(e) => { if (!saving) e.currentTarget.style.backgroundColor = '#2563eb'; }}
                   >
                     {saving ? 'Saving...' : 'Save Profile'}
+                  </button>
+                </div>
+
+                <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
+                  <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.75rem' }}>Sign out of your account on this device.</p>
+                  <button
+                    onClick={handleSignOut}
+                    style={{ display: 'inline-flex', alignItems: 'center', padding: '0.5rem 1rem', border: '1px solid #fca5a5', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: '#dc2626', backgroundColor: 'white', cursor: 'pointer' }}
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#fef2f2'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
+                  >
+                    Sign Out
                   </button>
                 </div>
               </div>
