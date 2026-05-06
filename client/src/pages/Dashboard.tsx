@@ -8,7 +8,7 @@ import {
   FireIcon,
   SparklesIcon
 } from '@heroicons/react/24/outline';
-import { api } from '../lib/api';
+import { supabase } from '../lib/supabase';
 
 export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -18,8 +18,17 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const data = await api.getUser(1);
-        setUserData(data.user);
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) { setError('Not authenticated'); return; }
+
+        const [userRes, profileRes] = await Promise.all([
+          supabase.from('users').select('first_name, last_name').eq('user_id', user.id).single(),
+          supabase.from('user_profiles').select('selected_cleaning_weekday, selected_cleaning_time, neat_freak_score, cleaner_categories(name)').eq('user_id', user.id).single(),
+        ]);
+
+        if (userRes.error) throw userRes.error;
+
+        setUserData({ ...userRes.data, profile: profileRes.data });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -64,11 +73,20 @@ export const Dashboard: React.FC = () => {
     );
   }
 
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  const formatTime = (t: string) => {
+    const [h, m] = t.split(':').map(Number);
+    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+  };
+
   const userName = userData?.first_name || 'User';
-  const cleaningDay = 'Saturday'; // TODO: Fetch from user profile
-  const cleaningTime = '9:00 AM'; // TODO: Fetch from user profile
-  const weeklyHealthScore = userData?.neat_freak_score || 85;
-  const neatFreakCategory = userData?.neat_freak_category || 'Neat Freak';
+  const cleaningDay = userData?.profile?.selected_cleaning_weekday != null
+    ? dayNames[userData.profile.selected_cleaning_weekday] : '—';
+  const cleaningTime = userData?.profile?.selected_cleaning_time
+    ? formatTime(userData.profile.selected_cleaning_time) : '—';
+  const weeklyHealthScore = userData?.profile?.neat_freak_score ?? '—';
+  const neatFreakCategory = (userData?.profile?.cleaner_categories as any)?.name || 'Cleaning Buddy';
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
