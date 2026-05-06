@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import {
   QuestionMarkCircleIcon,
   ChevronRightIcon,
@@ -7,6 +8,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 export const Help: React.FC = () => {
+  const navigate = useNavigate();
+  const handleSignOut = async () => { await supabase.auth.signOut(); navigate('/login'); };
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -45,7 +48,7 @@ export const Help: React.FC = () => {
         },
         {
           question: 'What does the postpone feature do?',
-          answer: 'The postpone feature allows you to reschedule tasks. When viewing a task, click the postpone button and choose between "Tomorrow at this time", "This time next week", or select a custom date from the calendar.',
+          answer: 'The postpone feature allows you to reschedule tasks. When viewing a task, click the postpone button and pick any future date from the date picker.',
           video: false
         },
         {
@@ -55,7 +58,7 @@ export const Help: React.FC = () => {
         },
         {
           question: 'Can I edit tasks after creating them?',
-          answer: 'Yes, you can edit tasks by clicking on them in the Room Checklists. You can modify the task name, description, due date, priority, and other details.',
+          answer: 'Predefined room tasks cannot be modified, but you can add custom tasks to any room from the Room Checklists page. Custom tasks can be checked off or removed, but cannot be edited after being added.',
           video: false
         }
       ]
@@ -89,7 +92,7 @@ export const Help: React.FC = () => {
       items: [
         {
           question: 'How do I change my password?',
-          answer: 'Go to Settings > Privacy and click "Reset Password". Enter your email address and follow the instructions sent to your email to create a new password.',
+          answer: 'Go to Settings > Profile and click "Reset Password". A password reset link will be sent to your email address — follow the instructions to create a new password.',
           video: false
         },
         {
@@ -99,7 +102,7 @@ export const Help: React.FC = () => {
         },
         {
           question: 'How do I delete my account?',
-          answer: 'Go to Settings > Privacy and click "Delete Account". Follow the confirmation steps to permanently delete your account and all associated data.',
+          answer: 'Go to Settings > Profile and click "Delete Account". You will be asked to confirm twice before your account and all associated data are permanently deleted.',
           video: false
         },
         {
@@ -171,6 +174,7 @@ export const Help: React.FC = () => {
               <Link to="/tips" style={{ color: '#6b7280', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none' }} onMouseOver={(e) => e.currentTarget.style.color = '#111827'} onMouseOut={(e) => e.currentTarget.style.color = '#6b7280'}>Tips</Link>
               <Link to="/settings" style={{ color: '#6b7280', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none' }} onMouseOver={(e) => e.currentTarget.style.color = '#111827'} onMouseOut={(e) => e.currentTarget.style.color = '#6b7280'}>Settings</Link>
               <Link to="/help" style={{ color: '#111827', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none' }}>Help</Link>
+              <button onClick={handleSignOut} style={{ color: '#dc2626', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={(e) => e.currentTarget.style.color = '#b91c1c'} onMouseOut={(e) => e.currentTarget.style.color = '#dc2626'}>Sign Out</button>
             </nav>
           </div>
         </div>

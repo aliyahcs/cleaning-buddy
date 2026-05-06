@@ -17,6 +17,7 @@ const DWELLING_ROOMS: Record<number, number[]> = {
 
 export const MyTasks: React.FC = () => {
   const navigate = useNavigate();
+  const handleSignOut = async () => { await supabase.auth.signOut(); navigate('/login'); };
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [newTaskName, setNewTaskName] = useState('');
   const [selectedRoomId, setSelectedRoomId] = useState(1);
@@ -186,6 +187,15 @@ export const MyTasks: React.FC = () => {
               >
                 Settings
               </Link>
+              <Link
+                to="/help"
+                style={{ color: '#6b7280', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none' }}
+                onMouseOver={(e) => e.currentTarget.style.color = '#111827'}
+                onMouseOut={(e) => e.currentTarget.style.color = '#6b7280'}
+              >
+                Help
+              </Link>
+              <button onClick={handleSignOut} style={{ color: '#dc2626', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={(e) => e.currentTarget.style.color = '#b91c1c'} onMouseOut={(e) => e.currentTarget.style.color = '#dc2626'}>Sign Out</button>
             </nav>
           </div>
         </div>

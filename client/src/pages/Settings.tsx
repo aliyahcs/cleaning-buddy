@@ -140,6 +140,58 @@ export const Settings: React.FC = () => {
     navigate('/login');
   };
 
+  const handleResetPassword = async () => {
+    try {
+      await supabase.auth.resetPasswordForEmail(userProfile.email);
+      alert('Password reset email sent! Check your inbox.');
+    } catch (err) {
+      alert('Failed to send reset email.');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) return;
+    if (!window.confirm('All your data will be permanently deleted. Are you absolutely sure?')) return;
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: cycles } = await supabase.from('cleaning_cycles').select('cycle_id').eq('user_id', user.id);
+      const cycleIds = (cycles || []).map((c: any) => c.cycle_id);
+      if (cycleIds.length > 0) {
+        const { data: cycleRooms } = await supabase.from('cycle_room_checklists').select('cycle_room_id').in('cycle_id', cycleIds);
+        const cycleRoomIds = (cycleRooms || []).map((cr: any) => cr.cycle_room_id);
+        if (cycleRoomIds.length > 0) {
+          const { data: cycleTasks } = await supabase.from('cycle_tasks').select('cycle_task_id').in('cycle_room_id', cycleRoomIds);
+          const cycleTaskIds = (cycleTasks || []).map((ct: any) => ct.cycle_task_id);
+          if (cycleTaskIds.length > 0) {
+            await supabase.from('task_postponements').delete().in('cycle_task_id', cycleTaskIds);
+            await supabase.from('notifications').delete().in('cycle_task_id', cycleTaskIds);
+            await supabase.from('cycle_tasks').delete().in('cycle_room_id', cycleRoomIds);
+          }
+          await supabase.from('cycle_room_checklists').delete().in('cycle_id', cycleIds);
+          await supabase.from('weekly_health_scores').delete().in('cycle_id', cycleIds);
+        }
+        await supabase.from('cleaning_cycles').delete().eq('user_id', user.id);
+      }
+      await supabase.from('notifications').delete().eq('user_id', user.id);
+      await supabase.from('analytics_snapshots').delete().eq('user_id', user.id);
+      await supabase.from('score_shares').delete().eq('user_id', user.id);
+      await supabase.from('user_notification_preferences').delete().eq('user_id', user.id);
+      await supabase.from('user_room_priorities').delete().eq('user_id', user.id);
+      await supabase.from('user_quiz_responses').delete().eq('user_id', user.id);
+      await supabase.from('user_task_completions').delete().eq('user_id', user.id);
+      await supabase.from('user_custom_tasks').delete().eq('user_id', user.id);
+      await supabase.from('user_profiles').delete().eq('user_id', user.id);
+      await supabase.from('users').delete().eq('user_id', user.id);
+      await supabase.auth.signOut();
+      navigate('/login');
+    } catch (err) {
+      alert('Failed to delete account. Please try again.');
+      setSaving(false);
+    }
+  };
+
   const tabs = [
     { id: 'profile', name: 'Profile', icon: UserIcon },
     { id: 'notifications', name: 'Notifications', icon: BellIcon },
@@ -298,16 +350,41 @@ export const Settings: React.FC = () => {
                   </button>
                 </div>
 
-                <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
-                  <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.75rem' }}>Sign out of your account on this device.</p>
-                  <button
-                    onClick={handleSignOut}
-                    style={{ display: 'inline-flex', alignItems: 'center', padding: '0.5rem 1rem', border: '1px solid #fca5a5', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: '#dc2626', backgroundColor: 'white', cursor: 'pointer' }}
-                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#fef2f2'; }}
-                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
-                  >
-                    Sign Out
-                  </button>
+                <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem', marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div>
+                    <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.75rem' }}>Sign out of your account on this device.</p>
+                    <button
+                      onClick={handleSignOut}
+                      style={{ display: 'inline-flex', alignItems: 'center', padding: '0.5rem 1rem', border: '1px solid #fca5a5', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: '#dc2626', backgroundColor: 'white', cursor: 'pointer' }}
+                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#fef2f2'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.75rem' }}>Send a password reset link to your email address.</p>
+                    <button
+                      onClick={handleResetPassword}
+                      style={{ display: 'inline-flex', alignItems: 'center', padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: '#374151', backgroundColor: 'white', cursor: 'pointer' }}
+                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f9fafb'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
+                    >
+                      Reset Password
+                    </button>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.75rem' }}>Permanently delete your account and all associated data. This cannot be undone.</p>
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={saving}
+                      style={{ display: 'inline-flex', alignItems: 'center', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', color: 'white', backgroundColor: saving ? '#9ca3af' : '#dc2626', cursor: saving ? 'not-allowed' : 'pointer' }}
+                      onMouseOver={(e) => { if (!saving) e.currentTarget.style.backgroundColor = '#b91c1c'; }}
+                      onMouseOut={(e) => { if (!saving) e.currentTarget.style.backgroundColor = '#dc2626'; }}
+                    >
+                      {saving ? 'Deleting...' : 'Delete Account'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

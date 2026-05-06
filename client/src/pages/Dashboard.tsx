@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   HomeIcon, 
   CalendarIcon, 
@@ -11,6 +11,8 @@ import {
 import { supabase } from '../lib/supabase';
 
 export const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const handleSignOut = async () => { await supabase.auth.signOut(); navigate('/login'); };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userData, setUserData] = useState<any>(null);
@@ -174,6 +176,15 @@ export const Dashboard: React.FC = () => {
               >
                 Settings
               </Link>
+              <Link
+                to="/help"
+                style={{ color: '#6b7280', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none' }}
+                onMouseOver={(e) => e.currentTarget.style.color = '#111827'}
+                onMouseOut={(e) => e.currentTarget.style.color = '#6b7280'}
+              >
+                Help
+              </Link>
+              <button onClick={handleSignOut} style={{ color: '#dc2626', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={(e) => e.currentTarget.style.color = '#b91c1c'} onMouseOut={(e) => e.currentTarget.style.color = '#dc2626'}>Sign Out</button>
             </nav>
           </div>
         </div>
